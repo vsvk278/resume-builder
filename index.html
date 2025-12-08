@@ -7,13 +7,14 @@
   <style>
     body { font-family: Arial, Helvetica, sans-serif; max-width:760px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
     .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
-    input, button, textarea { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; }
+    input, button, textarea { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; box-sizing:border-box;}
     button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
     .row { display:flex; gap:8px; }
     .hidden { display:none; }
     small { color:#9aa7b2; }
     label { color:#cfe8f0; font-weight:600; }
     hr { border:none; border-top:1px solid #233040; margin:18px 0; }
+    .small-muted { font-size:0.9rem; color:#9aa7b2; }
   </style>
 </head>
 <body>
@@ -30,7 +31,7 @@
     <input id="li-password" type="password" placeholder="Password" />
     <button id="btn-login">Log in</button>
 
-    <p id="auth-msg"><small>Use signup first, then login. Check your Supabase Auth → Users to see your user.</small></p>
+    <p id="auth-msg" class="small-muted">Use signup first, then login. Check your Supabase Auth → Users to see your user.</p>
   </div>
 
   <div id="dashboard" class="card hidden">
@@ -66,7 +67,7 @@
       <label>End date (or leave blank)</label>
       <input id="exp-end" type="date" />
       <label>Bullets (one per line)</label>
-      <textarea id="exp-bullets" placeholder="Achieved X...&#10;Improved Y..."></textarea>
+      <textarea id="exp-bullets" placeholder="Achieved X...&#10;Improved Y..." rows="4"></textarea>
       <div class="row">
         <button id="btn-add-exp" style="flex:1;background:#0ea5a4;color:#012;">Add Experience</button>
         <button id="btn-refresh-exps" style="flex:1;background:#334155;color:#fff;">Refresh</button>
@@ -87,7 +88,7 @@
       <label>End date</label>
       <input id="edu-end" type="date" />
       <label>Notes</label>
-      <textarea id="edu-notes" placeholder="Any honours / achievements"></textarea>
+      <textarea id="edu-notes" placeholder="Any honours / achievements" rows="3"></textarea>
       <div class="row">
         <button id="btn-add-edu" style="flex:1;background:#0ea5a4;color:#012;">Add Education</button>
         <button id="btn-refresh-edus" style="flex:1;background:#334155;color:#fff;">Refresh</button>
@@ -95,17 +96,17 @@
     </div>
     <div id="education-list"><small>No education yet.</small></div>
 
-    <p id="status"></p>
+    <p id="status" class="small-muted"></p>
   </div>
 
   <!-- UMD build of supabase (works reliably in static pages) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
   <script>
-    // === CONFIG: replace if needed (you already set these) ===
+    // === CONFIG: replace if needed ===
     const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
-    // =======================================================
+    // ===============================
 
     // Initialize supabase client (UMD)
     const { createClient } = supabase
@@ -118,10 +119,10 @@
     const userEmailSpan = document.getElementById('user-email')
     const status = document.getElementById('status')
 
-    // ----------------- Helper -----------------
+    // helpers
     function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') }
 
-    // ----------------- Experiences & Education functions -----------------
+    // experiences & education loaders
     async function loadExperiences() {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (!user) { document.getElementById('experiences-list').innerHTML = '<small>Login to see experiences</small>'; return }
@@ -175,7 +176,7 @@
       })
     }
 
-    // ----------------- Auth & Profile wiring -----------------
+    // auth & profile
     document.getElementById('btn-signup').onclick = async () => {
       authMsg.textContent = 'Signing up...'
       const email = document.getElementById('su-email').value
@@ -257,19 +258,18 @@
       status.textContent = ''
     }
 
-    // Auth state listener
+    // auth state listener
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (session && session.user) showDashboard()
       else hideDashboard()
     })
 
-    // Call once on load
     ;(async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (user) showDashboard()
     })()
 
-    // ----------------- Add handlers for add / refresh buttons -----------------
+    // add/refresh handlers
     document.getElementById('btn-add-exp').onclick = async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (!user) return alert('Login required')
@@ -322,6 +322,210 @@
 
     document.getElementById('btn-refresh-edus').onclick = loadEducation
 
+  </script>
+
+  <!-- === LLM Tailoring UI === -->
+  <hr />
+  <div class="card" id="llm-section">
+    <h3>AI Tailoring (user-supplied API key)</h3>
+
+    <label>OpenAI API key (paste your key here; it is stored only in your browser)</label>
+    <input id="user-api-key" placeholder="sk-..." />
+    <div class="row">
+      <button id="btn-save-key" style="flex:1;background:#0ea5a4;color:#012;">Save Key (browser)</button>
+      <button id="btn-clear-key" style="flex:1;background:#ef4444;color:#fff;">Clear Key</button>
+    </div>
+    <small id="key-hint" class="small-muted">Key stored in localStorage for this browser only.</small>
+
+    <hr />
+
+    <label>Paste job description</label>
+    <textarea id="job-desc" placeholder="Paste the job description here..." style="height:120px"></textarea>
+
+    <div class="row">
+      <button id="btn-generate" style="flex:1;background:#06b6d4;color:#012;">Generate tailored resume</button>
+      <button id="btn-copy-output" style="flex:1;background:#334155;color:#fff;">Copy output</button>
+    </div>
+
+    <p id="llm-status" class="small-muted"></p>
+
+    <h4>Generated tailored resume</h4>
+    <div id="llm-output" class="card" style="white-space:pre-wrap; max-height:480px; overflow:auto; background:#071226;"></div>
+
+    <div style="margin-top:8px;">
+      <button id="btn-print" style="background:#0ea5a4;color:#012;">Print / Save as PDF</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Helpers to get/set API key in browser ---
+    const apiKeyInput = document.getElementById('user-api-key')
+    const btnSaveKey = document.getElementById('btn-save-key')
+    const btnClearKey = document.getElementById('btn-clear-key')
+    const keyHint = document.getElementById('key-hint')
+    const llmStatus = document.getElementById('llm-status')
+    const llmOutput = document.getElementById('llm-output')
+
+    function saveKeyToBrowser(k){
+      if(!k) return
+      localStorage.setItem('user_llm_api_key', k.trim())
+      keyHint.textContent = 'API key saved in browser localStorage.'
+      apiKeyInput.value = ''
+    }
+    function clearKeyFromBrowser(){
+      localStorage.removeItem('user_llm_api_key')
+      keyHint.textContent = 'Key cleared from browser.'
+    }
+    function getKeyFromBrowser(){
+      return localStorage.getItem('user_llm_api_key') || null
+    }
+
+    // init input if key present
+    (function(){
+      const k = getKeyFromBrowser()
+      if(k) {
+        apiKeyInput.placeholder = 'API key saved (not shown)'
+        keyHint.textContent = 'An API key is saved in this browser (use Clear Key to remove).'
+      }
+    })()
+
+    btnSaveKey.onclick = ()=> {
+      const v = apiKeyInput.value.trim()
+      if(!v){ alert('Paste your OpenAI API key (sk-...)'); return }
+      saveKeyToBrowser(v)
+    }
+    btnClearKey.onclick = ()=> {
+      if(!confirm('Remove saved API key from this browser?')) return
+      clearKeyFromBrowser()
+    }
+
+    // Print / PDF
+    document.getElementById('btn-print').onclick = () => {
+      const html = `<html><head><title>Tailored Resume</title></head><body style="font-family: Arial; padding:20px;">${llmOutput.innerHTML}</body></html>`
+      const w = window.open('', '_blank')
+      w.document.write(html)
+      w.document.close()
+      w.focus()
+      w.print()
+    }
+
+    // Copy output
+    document.getElementById('btn-copy-output').onclick = async () => {
+      const text = llmOutput.innerText || llmOutput.textContent || ''
+      if(!text) return alert('No output to copy')
+      await navigator.clipboard.writeText(text)
+      alert('Copied to clipboard')
+    }
+
+    // Build prompt (fixed/correct)
+    async function buildPrompt(jobDescription){
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if(!user) throw new Error('Not authenticated')
+
+      const [profileRes, expsRes, edusRes] = await Promise.all([
+        supabaseClient.from('profiles').select('*').eq('id', user.id).single(),
+        supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending:false }),
+        supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending:false })
+      ])
+
+      const profile = profileRes?.data || null
+      const exps = expsRes?.data || []
+      const edus = edusRes?.data || []
+
+      let profileText = `Name: ${profile?.full_name || ''}\nLocation: ${profile?.location || ''}\nPhone: ${profile?.phone || ''}\nLinkedIn: ${profile?.linkedin || ''}\nGitHub: ${profile?.github || ''}\n\n`
+      let expText = 'Experience:\n'
+      if(exps && exps.length){
+        for(const e of exps){
+          expText += `- ${e.title || ''} at ${e.company || ''} (${e.start_date || ''} - ${e.end_date || 'Present'})\n`
+          if(e.bullets) expText += (e.bullets.split('\n').map(b => `  • ${b}`).join('\n')) + '\n'
+        }
+      } else expText += '- No experiences listed\n'
+      let eduText = 'Education:\n'
+      if(edus && edus.length){
+        for(const d of edus){
+          eduText += `- ${d.degree || ''} at ${d.institution || ''} (${d.start_date || ''} - ${d.end_date || ''})\n`
+        }
+      } else eduText += '- No education listed\n'
+
+      const prompt = `
+You are a professional resume-writer and ATS optimization specialist.
+The user will provide a Job Description (JD) and their profile + experiences + education.
+Your task: produce a concise, well-formatted, ATS-optimized tailored resume for this JD.
+- Start with a 2-3 sentence professional summary targeted to the JD.
+- Then list Experience bullets (3-6 per relevant role) prioritized by relevance to the JD.
+- Rewrite bullets to be accomplishment-driven, quantified when possible, start with strong action verbs, and include keywords from the JD.
+- Keep language concise, no fluff. Use consistent tense (past for previous roles, present for current).
+- Output in plain text with clear sections: Summary, Experience (role/company, dates, bullets), Education, Skills (if you can infer).
+- Include an "ATS keywords" short list at the end (5-12 keywords).
+Here is the user's profile and history:
+${profileText}
+${expText}
+${eduText}
+
+Here is the Job Description:
+${jobDescription}
+
+Produce the tailored resume now.
+      `.trim()
+
+      return prompt
+    }
+
+    // Call the LLM (OpenAI Chat Completions endpoint)
+    async function callLLM(promptText){
+      const key = getKeyFromBrowser()
+      if(!key) throw new Error('Missing API key. Save your API key first.')
+      llmStatus.textContent = 'Calling LLM... (this may take a few seconds)'
+      llmOutput.textContent = ''
+
+      // set model; change if needed
+      const model = 'gpt-4o-mini' // change to 'gpt-4' or 'gpt-3.5-turbo' if your key lacks access
+
+      const body = {
+        model,
+        messages: [{ role: 'user', content: promptText }],
+        max_tokens: 1000,
+        temperature: 0.2
+      }
+
+      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`
+        },
+        body: JSON.stringify(body)
+      })
+
+      if(!resp.ok){
+        const text = await resp.text()
+        throw new Error(`LLM error ${resp.status}: ${text}`)
+      }
+
+      const data = await resp.json()
+      const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || JSON.stringify(data,null,2)
+      llmStatus.textContent = 'Done.'
+      return content
+    }
+
+    // Hook up Generate button
+    document.getElementById('btn-generate').onclick = async () => {
+      try{
+        const jd = document.getElementById('job-desc').value.trim()
+        if(!jd) return alert('Paste a job description first.')
+        llmStatus.textContent = 'Preparing prompt...'
+        const prompt = await buildPrompt(jd)
+        const out = await callLLM(prompt)
+        llmOutput.innerText = out
+      }catch(err){
+        console.error(err)
+        alert('Error: ' + (err.message || err))
+        llmStatus.textContent = 'Error: ' + (err.message || '')
+      }
+    }
+
+    // quick save/load key: support paste+save with Enter
+    apiKeyInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter'){ e.preventDefault(); btnSaveKey.click() } })
   </script>
 </body>
 </html>
