@@ -13,6 +13,7 @@
     .hidden { display:none; }
     small { color:#9aa7b2; }
     label { color:#cfe8f0; font-weight:600; }
+    hr { border:none; border-top:1px solid #233040; margin:18px 0; }
   </style>
 </head>
 <body>
@@ -29,7 +30,7 @@
     <input id="li-password" type="password" placeholder="Password" />
     <button id="btn-login">Log in</button>
 
-    <p id="auth-msg"><small>Use signup first, then login. Check your Supabase Auth > Users to see your user.</small></p>
+    <p id="auth-msg"><small>Use signup first, then login. Check your Supabase Auth → Users to see your user.</small></p>
   </div>
 
   <div id="dashboard" class="card hidden">
@@ -52,113 +53,275 @@
     <input id="github" placeholder="GitHub URL" />
     <button id="btn-save-profile">Save Profile</button>
 
+    <hr />
+
+    <h3>Experience</h3>
+    <div id="experience-form" style="margin-bottom:12px;">
+      <label>Company</label>
+      <input id="exp-company" placeholder="Company" />
+      <label>Title</label>
+      <input id="exp-title" placeholder="Role/Title" />
+      <label>Start date</label>
+      <input id="exp-start" type="date" />
+      <label>End date (or leave blank)</label>
+      <input id="exp-end" type="date" />
+      <label>Bullets (one per line)</label>
+      <textarea id="exp-bullets" placeholder="Achieved X...&#10;Improved Y..."></textarea>
+      <div class="row">
+        <button id="btn-add-exp" style="flex:1;background:#0ea5a4;color:#012;">Add Experience</button>
+        <button id="btn-refresh-exps" style="flex:1;background:#334155;color:#fff;">Refresh</button>
+      </div>
+    </div>
+    <div id="experiences-list"><small>No experiences yet.</small></div>
+
+    <hr />
+
+    <h3>Education</h3>
+    <div id="education-form" style="margin-bottom:12px;">
+      <label>Institution</label>
+      <input id="edu-institution" placeholder="College / Univ" />
+      <label>Degree</label>
+      <input id="edu-degree" placeholder="B.Sc / M.Sc / B.Tech" />
+      <label>Start date</label>
+      <input id="edu-start" type="date" />
+      <label>End date</label>
+      <input id="edu-end" type="date" />
+      <label>Notes</label>
+      <textarea id="edu-notes" placeholder="Any honours / achievements"></textarea>
+      <div class="row">
+        <button id="btn-add-edu" style="flex:1;background:#0ea5a4;color:#012;">Add Education</button>
+        <button id="btn-refresh-edus" style="flex:1;background:#334155;color:#fff;">Refresh</button>
+      </div>
+    </div>
+    <div id="education-list"><small>No education yet.</small></div>
+
     <p id="status"></p>
   </div>
 
   <!-- UMD build of supabase (works reliably in static pages) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
-<script>
-  // replace these with your values (you already set them)
-  const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
-  const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+  <script>
+    // === CONFIG: replace if needed (you already set these) ===
+    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+    // =======================================================
 
-  // the UMD bundle exposes a global named `supabase`
-  const { createClient } = supabase
-  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    // Initialize supabase client (UMD)
+    const { createClient } = supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-  // --- UI wiring (same logic as before, but using supabaseClient) ---
-  const authForms = document.getElementById('auth-forms')
-  const dashboard = document.getElementById('dashboard')
-  const authMsg = document.getElementById('auth-msg')
-  const userEmailSpan = document.getElementById('user-email')
-  const status = document.getElementById('status')
+    // UI elements
+    const authForms = document.getElementById('auth-forms')
+    const dashboard = document.getElementById('dashboard')
+    const authMsg = document.getElementById('auth-msg')
+    const userEmailSpan = document.getElementById('user-email')
+    const status = document.getElementById('status')
 
-  document.getElementById('btn-signup').onclick = async () => {
-    authMsg.textContent = 'Signing up...'
-    const email = document.getElementById('su-email').value
-    const password = document.getElementById('su-password').value
-    const { data, error } = await supabaseClient.auth.signUp({ email, password })
-    if (error) authMsg.textContent = 'Error: ' + error.message
-    else authMsg.textContent = 'Signup successful — check your email for confirmation if required.'
-  }
+    // ----------------- Helper -----------------
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') }
 
-  document.getElementById('btn-login').onclick = async () => {
-    authMsg.textContent = 'Logging in...'
-    const email = document.getElementById('li-email').value
-    const password = document.getElementById('li-password').value
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
-    if (error) authMsg.textContent = 'Error: ' + error.message
-    else {
-      authMsg.textContent = 'Logged in'
-      await showDashboard()
+    // ----------------- Experiences & Education functions -----------------
+    async function loadExperiences() {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) { document.getElementById('experiences-list').innerHTML = '<small>Login to see experiences</small>'; return }
+      const { data, error } = await supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+      if (error) { console.log('loadExperiences error', error); return }
+      if (!data || data.length === 0) { document.getElementById('experiences-list').innerHTML = '<small>No experiences yet.</small>'; return }
+      const html = data.map(e => {
+        const bullets = (e.bullets||'').split('\n').map(b => `<li>${escapeHtml(b)}</li>`).join('')
+        return `<div class="card" style="margin-bottom:8px;">
+          <strong>${escapeHtml(e.title||'')}</strong> — ${escapeHtml(e.company||'')}<br/>
+          <small>${e.start_date || ''} — ${e.end_date || 'Present'}</small>
+          <ul style="margin-top:8px;">${bullets}</ul>
+          <button data-id="${e.id}" class="btn-del-exp" style="background:#ef4444;color:#fff;border:0;padding:6px;border-radius:6px;">Delete</button>
+        </div>`
+      }).join('')
+      document.getElementById('experiences-list').innerHTML = html
+      document.querySelectorAll('.btn-del-exp').forEach(btn => {
+        btn.onclick = async (ev) => {
+          const id = ev.target.dataset.id
+          if (!confirm('Delete this experience?')) return
+          const { error } = await supabaseClient.from('experiences').delete().eq('id', id)
+          if (error) alert('Delete error: ' + error.message)
+          else loadExperiences()
+        }
+      })
     }
-  }
 
-  document.getElementById('btn-logout').onclick = async () => {
-    await supabaseClient.auth.signOut()
-    hideDashboard()
-  }
-
-  document.getElementById('btn-save-profile').onclick = async () => {
-    status.textContent = 'Saving...'
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) { status.textContent = 'Not authenticated'; return }
-    const payload = {
-      id: user.id,
-      full_name: document.getElementById('full_name').value || null,
-      phone: document.getElementById('phone').value || null,
-      location: document.getElementById('location').value || null,
-      linkedin: document.getElementById('linkedin').value || null,
-      github: document.getElementById('github').value || null
+    async function loadEducation() {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) { document.getElementById('education-list').innerHTML = '<small>Login to see education</small>'; return }
+      const { data, error } = await supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+      if (error) { console.log('loadEducation error', error); return }
+      if (!data || data.length === 0) { document.getElementById('education-list').innerHTML = '<small>No education yet.</small>'; return }
+      const html = data.map(e => {
+        return `<div class="card" style="margin-bottom:8px;">
+          <strong>${escapeHtml(e.degree||'')}</strong> — ${escapeHtml(e.institution||'')}<br/>
+          <small>${e.start_date || ''} — ${e.end_date || ''}</small>
+          <p>${escapeHtml(e.notes||'')}</p>
+          <button data-id="${e.id}" class="btn-del-edu" style="background:#ef4444;color:#fff;border:0;padding:6px;border-radius:6px;">Delete</button>
+        </div>`
+      }).join('')
+      document.getElementById('education-list').innerHTML = html
+      document.querySelectorAll('.btn-del-edu').forEach(btn => {
+        btn.onclick = async (ev) => {
+          const id = ev.target.dataset.id
+          if (!confirm('Delete this education?')) return
+          const { error } = await supabaseClient.from('education').delete().eq('id', id)
+          if (error) alert('Delete error: ' + error.message)
+          else loadEducation()
+        }
+      })
     }
-    const { error } = await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' })
-    if (error) status.textContent = 'Error: ' + error.message
-    else status.textContent = 'Profile saved'
-  }
 
-  document.getElementById('btn-refresh').onclick = showDashboard
-
-  async function showDashboard() {
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) return hideDashboard()
-    userEmailSpan.textContent = user.email
-    authForms.classList.add('hidden')
-    dashboard.classList.remove('hidden')
-    const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single()
-    if (error && error.code !== 'PGRST116') console.log('select error', error)
-    if (data) {
-      document.getElementById('full_name').value = data.full_name || ''
-      document.getElementById('phone').value = data.phone || ''
-      document.getElementById('location').value = data.location || ''
-      document.getElementById('linkedin').value = data.linkedin || ''
-      document.getElementById('github').value = data.github || ''
-    } else {
-      document.getElementById('full_name').value = ''
-      document.getElementById('phone').value = ''
-      document.getElementById('location').value = ''
-      document.getElementById('linkedin').value = ''
-      document.getElementById('github').value = ''
+    // ----------------- Auth & Profile wiring -----------------
+    document.getElementById('btn-signup').onclick = async () => {
+      authMsg.textContent = 'Signing up...'
+      const email = document.getElementById('su-email').value
+      const password = document.getElementById('su-password').value
+      const { data, error } = await supabaseClient.auth.signUp({ email, password })
+      if (error) authMsg.textContent = 'Error: ' + error.message
+      else authMsg.textContent = 'Signup successful — check your email for confirmation if required.'
     }
-  }
 
-  function hideDashboard() {
-    authForms.classList.remove('hidden')
-    dashboard.classList.add('hidden')
-    authMsg.textContent = ''
-    status.textContent = ''
-  }
+    document.getElementById('btn-login').onclick = async () => {
+      authMsg.textContent = 'Logging in...'
+      const email = document.getElementById('li-email').value
+      const password = document.getElementById('li-password').value
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
+      if (error) authMsg.textContent = 'Error: ' + error.message
+      else {
+        authMsg.textContent = 'Logged in'
+        await showDashboard()
+      }
+    }
 
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (session && session.user) showDashboard()
-    else hideDashboard()
-  })
+    document.getElementById('btn-logout').onclick = async () => {
+      await supabaseClient.auth.signOut()
+      hideDashboard()
+    }
 
-  ;(async () => {
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (user) showDashboard()
-  })()
-</script>
+    document.getElementById('btn-save-profile').onclick = async () => {
+      status.textContent = 'Saving...'
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) { status.textContent = 'Not authenticated'; return }
+      const payload = {
+        id: user.id,
+        full_name: document.getElementById('full_name').value || null,
+        phone: document.getElementById('phone').value || null,
+        location: document.getElementById('location').value || null,
+        linkedin: document.getElementById('linkedin').value || null,
+        github: document.getElementById('github').value || null
+      }
+      const { error } = await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' })
+      if (error) status.textContent = 'Error: ' + error.message
+      else status.textContent = 'Profile saved'
+    }
 
+    document.getElementById('btn-refresh').onclick = showDashboard
+
+    async function showDashboard() {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) return hideDashboard()
+      userEmailSpan.textContent = user.email
+      authForms.classList.add('hidden')
+      dashboard.classList.remove('hidden')
+
+      // load profile
+      const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single()
+      if (error && error.code !== 'PGRST116') console.log('select error', error)
+      if (data) {
+        document.getElementById('full_name').value = data.full_name || ''
+        document.getElementById('phone').value = data.phone || ''
+        document.getElementById('location').value = data.location || ''
+        document.getElementById('linkedin').value = data.linkedin || ''
+        document.getElementById('github').value = data.github || ''
+      } else {
+        document.getElementById('full_name').value = ''
+        document.getElementById('phone').value = ''
+        document.getElementById('location').value = ''
+        document.getElementById('linkedin').value = ''
+        document.getElementById('github').value = ''
+      }
+
+      // load experiences & education for this user
+      await loadExperiences()
+      await loadEducation()
+    }
+
+    function hideDashboard() {
+      authForms.classList.remove('hidden')
+      dashboard.classList.add('hidden')
+      authMsg.textContent = ''
+      status.textContent = ''
+    }
+
+    // Auth state listener
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) showDashboard()
+      else hideDashboard()
+    })
+
+    // Call once on load
+    ;(async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (user) showDashboard()
+    })()
+
+    // ----------------- Add handlers for add / refresh buttons -----------------
+    document.getElementById('btn-add-exp').onclick = async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) return alert('Login required')
+      const payload = {
+        user_id: user.id,
+        company: document.getElementById('exp-company').value || null,
+        title: document.getElementById('exp-title').value || null,
+        start_date: document.getElementById('exp-start').value || null,
+        end_date: document.getElementById('exp-end').value || null,
+        bullets: document.getElementById('exp-bullets').value || null
+      }
+      const { error } = await supabaseClient.from('experiences').insert(payload)
+      if (error) alert('Error: ' + error.message)
+      else {
+        alert('Experience added')
+        await loadExperiences()
+        document.getElementById('exp-company').value=''
+        document.getElementById('exp-title').value=''
+        document.getElementById('exp-start').value=''
+        document.getElementById('exp-end').value=''
+        document.getElementById('exp-bullets').value=''
+      }
+    }
+
+    document.getElementById('btn-refresh-exps').onclick = loadExperiences
+
+    document.getElementById('btn-add-edu').onclick = async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) return alert('Login required')
+      const payload = {
+        user_id: user.id,
+        institution: document.getElementById('edu-institution').value || null,
+        degree: document.getElementById('edu-degree').value || null,
+        start_date: document.getElementById('edu-start').value || null,
+        end_date: document.getElementById('edu-end').value || null,
+        notes: document.getElementById('edu-notes').value || null
+      }
+      const { error } = await supabaseClient.from('education').insert(payload)
+      if (error) alert('Error: ' + error.message)
+      else {
+        alert('Education added')
+        await loadEducation()
+        document.getElementById('edu-institution').value=''
+        document.getElementById('edu-degree').value=''
+        document.getElementById('edu-start').value=''
+        document.getElementById('edu-end').value=''
+        document.getElementById('edu-notes').value=''
+      }
+    }
+
+    document.getElementById('btn-refresh-edus').onclick = loadEducation
+
+  </script>
 </body>
 </html>
