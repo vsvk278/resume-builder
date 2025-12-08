@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Resume Builder — Signup / Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; max-width:760px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
+    .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
+    input, button, textarea { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; }
+    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
+    .row { display:flex; gap:8px; }
+    .hidden { display:none; }
+    small { color:#9aa7b2; }
+    label { color:#cfe8f0; font-weight:600; }
+  </style>
+</head>
+<body>
+  <h1>Resume Builder — Signup / Login</h1>
+
+  <div id="auth-forms" class="card">
+    <h3>Sign up</h3>
+    <input id="su-email" placeholder="Email" />
+    <input id="su-password" type="password" placeholder="Password (min 6 chars)" />
+    <button id="btn-signup">Sign up</button>
+
+    <h3>Log in</h3>
+    <input id="li-email" placeholder="Email" />
+    <input id="li-password" type="password" placeholder="Password" />
+    <button id="btn-login">Log in</button>
+
+    <p id="auth-msg"><small>Use signup first, then login. Check your Supabase Auth > Users to see your user.</small></p>
+  </div>
+
+  <div id="dashboard" class="card hidden">
+    <p>Logged in as <strong><span id="user-email"></span></strong></p>
+    <div class="row" style="margin-bottom:12px;">
+      <button id="btn-logout" style="flex:1;background:#ef4444;color:#fff;">Logout</button>
+      <button id="btn-refresh" style="flex:1;background:#0ea5a4;color:#012;">Refresh profile</button>
+    </div>
+
+    <h3>Your profile (saved to DB)</h3>
+    <label>Full name</label>
+    <input id="full_name" placeholder="Full name" />
+    <label>Phone</label>
+    <input id="phone" placeholder="Phone" />
+    <label>Location</label>
+    <input id="location" placeholder="City, Country" />
+    <label>LinkedIn</label>
+    <input id="linkedin" placeholder="LinkedIn URL" />
+    <label>GitHub</label>
+    <input id="github" placeholder="GitHub URL" />
+    <button id="btn-save-profile">Save Profile</button>
+
+    <p id="status"></p>
+  </div>
+
+  <!-- UMD build of supabase (works reliably in static pages) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+
+<script>
+  // replace these with your values (you already set them)
+  const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+  const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+
+  // the UMD bundle exposes a global named `supabase`
+  const { createClient } = supabase
+  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+  // --- UI wiring (same logic as before, but using supabaseClient) ---
+  const authForms = document.getElementById('auth-forms')
+  const dashboard = document.getElementById('dashboard')
+  const authMsg = document.getElementById('auth-msg')
+  const userEmailSpan = document.getElementById('user-email')
+  const status = document.getElementById('status')
+
+  document.getElementById('btn-signup').onclick = async () => {
+    authMsg.textContent = 'Signing up...'
+    const email = document.getElementById('su-email').value
+    const password = document.getElementById('su-password').value
+    const { data, error } = await supabaseClient.auth.signUp({ email, password })
+    if (error) authMsg.textContent = 'Error: ' + error.message
+    else authMsg.textContent = 'Signup successful — check your email for confirmation if required.'
+  }
+
+  document.getElementById('btn-login').onclick = async () => {
+    authMsg.textContent = 'Logging in...'
+    const email = document.getElementById('li-email').value
+    const password = document.getElementById('li-password').value
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
+    if (error) authMsg.textContent = 'Error: ' + error.message
+    else {
+      authMsg.textContent = 'Logged in'
+      await showDashboard()
+    }
+  }
+
+  document.getElementById('btn-logout').onclick = async () => {
+    await supabaseClient.auth.signOut()
+    hideDashboard()
+  }
+
+  document.getElementById('btn-save-profile').onclick = async () => {
+    status.textContent = 'Saving...'
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) { status.textContent = 'Not authenticated'; return }
+    const payload = {
+      id: user.id,
+      full_name: document.getElementById('full_name').value || null,
+      phone: document.getElementById('phone').value || null,
+      location: document.getElementById('location').value || null,
+      linkedin: document.getElementById('linkedin').value || null,
+      github: document.getElementById('github').value || null
+    }
+    const { error } = await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' })
+    if (error) status.textContent = 'Error: ' + error.message
+    else status.textContent = 'Profile saved'
+  }
+
+  document.getElementById('btn-refresh').onclick = showDashboard
+
+  async function showDashboard() {
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) return hideDashboard()
+    userEmailSpan.textContent = user.email
+    authForms.classList.add('hidden')
+    dashboard.classList.remove('hidden')
+    const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single()
+    if (error && error.code !== 'PGRST116') console.log('select error', error)
+    if (data) {
+      document.getElementById('full_name').value = data.full_name || ''
+      document.getElementById('phone').value = data.phone || ''
+      document.getElementById('location').value = data.location || ''
+      document.getElementById('linkedin').value = data.linkedin || ''
+      document.getElementById('github').value = data.github || ''
+    } else {
+      document.getElementById('full_name').value = ''
+      document.getElementById('phone').value = ''
+      document.getElementById('location').value = ''
+      document.getElementById('linkedin').value = ''
+      document.getElementById('github').value = ''
+    }
+  }
+
+  function hideDashboard() {
+    authForms.classList.remove('hidden')
+    dashboard.classList.add('hidden')
+    authMsg.textContent = ''
+    status.textContent = ''
+  }
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) showDashboard()
+    else hideDashboard()
+  })
+
+  ;(async () => {
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (user) showDashboard()
+  })()
+</script>
+
+</body>
+</html>
