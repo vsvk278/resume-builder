@@ -7,11 +7,20 @@
   <style>
     body { font-family: Arial, Helvetica, sans-serif; max-width:760px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
     .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
-    input, button { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; box-sizing:border-box; }
-    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
+    input, button {
+      display:block; width:100%; margin:8px 0; padding:10px; 
+      border-radius:6px; border:1px solid #233040; background:#071226; color:#fff;
+      box-sizing:border-box;
+    }
+    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; font-weight:600; }
     small { color:#9aa7b2; }
   </style>
+
+  <!-- Supabase + common.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="common.js"></script>
 </head>
+
 <body>
   <h1>Resume Builder — Signup / Login</h1>
 
@@ -26,51 +35,40 @@
     <input id="li-password" type="password" placeholder="Password" />
     <button id="btn-login">Log in</button>
 
-    <p id="auth-msg"><small>Use signup first, then login. After login you'll be redirected to the dashboard.</small></p>
+    <p id="auth-msg"><small>Use signup first, then login.</small></p>
   </div>
 
-  <!-- supabase UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script>
-    // CONFIG - replace if needed
-    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
-    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
-    const { createClient } = supabase
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    const authMsg = document.getElementById('auth-msg')
+<script>
+// redirect user if already logged in
+redirectIfLoggedIn();
 
-    // SIGNUP
-    document.getElementById('btn-signup').onclick = async () => {
-      authMsg.textContent = 'Signing up...'
-      const email = document.getElementById('su-email').value
-      const password = document.getElementById('su-password').value
-      const { data, error } = await supabaseClient.auth.signUp({ email, password })
-      if (error) authMsg.textContent = 'Error: ' + error.message
-      else {
-        authMsg.textContent = 'Signup successful. Check email if confirmation required. You can sign in now.'
-      }
-    }
+const authMsg = document.getElementById("auth-msg");
 
-    // LOGIN -> redirect to home.html on success
-    document.getElementById('btn-login').onclick = async () => {
-      authMsg.textContent = 'Logging in...'
-      const email = document.getElementById('li-email').value
-      const password = document.getElementById('li-password').value
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
-      if (error) {
-        authMsg.textContent = 'Error: ' + error.message
-      } else {
-        // Successful login — redirect to dashboard
-        window.location.href = 'home.html'
-      }
-    }
+// SIGNUP
+document.getElementById("btn-signup").onclick = async () => {
+  authMsg.textContent = "Signing up...";
+  const email = document.getElementById("su-email").value;
+  const password = document.getElementById("su-password").value;
 
-    // If user already logged in, redirect automatically
-    (async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (user) window.location.href = 'home.html'
-    })()
-  </script>
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+
+  if (error) authMsg.textContent = "Error: " + error.message;
+  else authMsg.textContent = "Signup successful. Now login.";
+};
+
+// LOGIN → redirect to home.html
+document.getElementById("btn-login").onclick = async () => {
+  authMsg.textContent = "Logging in...";
+  const email = document.getElementById("li-email").value;
+  const password = document.getElementById("li-password").value;
+
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  if (error) authMsg.textContent = "Error: " + error.message;
+  else window.location.href = "home.html";
+};
+</script>
+
 </body>
 </html>
