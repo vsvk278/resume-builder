@@ -1,55 +1,93 @@
-// common.js — shared helpers for auth + navigation + storage
-// load this from every page (put <script src="common.js"></script> before page-specific scripts)
+// common.js — Supabase client + small helpers (no UI/CSS changes)
+// Put <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+// before loading this common.js in every page.
 
-(function(global){
-  const APP_KEY = 'rb_app_v1';
+const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7';
 
-  function setLoggedIn(email) {
-    localStorage.setItem('rb_logged_in', JSON.stringify({ email }));
-  }
-  function logout() {
-    localStorage.removeItem('rb_logged_in');
-  }
-  function isLoggedIn() {
-    return !!localStorage.getItem('rb_logged_in');
-  }
-  function getLoggedInUser() {
-    return JSON.parse(localStorage.getItem('rb_logged_in') || 'null');
-  }
+if (!window.supabase) {
+  console.warn('Supabase UMD not loaded before common.js — ensure the UMD script tag is present.');
+}
 
-  // resume storage helpers
-  function saveUserProfile(email, profile) {
-    // store per-email
-    const all = JSON.parse(localStorage.getItem('rb_profiles') || '{}');
-    all[email] = profile;
-    localStorage.setItem('rb_profiles', JSON.stringify(all));
-  }
-  function loadUserProfile(email) {
-    const all = JSON.parse(localStorage.getItem('rb_profiles') || '{}');
-    return all[email] || null;
-  }
-  function saveResume(email, resume) {
-    const key = `rb_resume_${email}`;
-    localStorage.setItem(key, JSON.stringify(resume));
-  }
-  function loadResume(email) {
-    const key = `rb_resume_${email}`;
-    return JSON.parse(localStorage.getItem(key) || 'null');
-  }
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // simple nav guard
-  function requireLogin(redirectTo = 'login.html') {
-    if (!isLoggedIn()) {
-      location.href = redirectTo;
-      return false;
+window.Common = {
+  client: supabaseClient,
+
+  // returns user object or null
+  async getUser() {
+    try {
+      const { data } = await supabaseClient.auth.getUser();
+      return data?.user || null;
+    } catch (e) { console.error('getUser error', e); return null; }
+  },
+
+  // Sign up
+  async signUp(email, password) {
+    return await supabaseClient.auth.signUp({ email, password });
+  },
+
+  // Sign in
+  async signIn(email, password) {
+    return await supabaseClient.auth.signInWithPassword({ email, password });
+  },
+
+  // Sign out
+  async signOut() {
+    return await supabaseClient.auth.signOut();
+  },
+
+  // Reset password (send email)
+  async resetPasswordForEmail(email, redirectTo) {
+    return await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+  },
+
+  // Upsert profile (profiles table must have primary key id = auth.user.id)
+  async upsertProfile(profile) {
+    return await supabaseClient.from('profiles').upsert(profile, { returning: 'minimal' });
+  },
+
+  async getProfileById(id) {
+    return await supabaseClient.from('profiles').select('*').eq('id', id).maybeSingle();
+  },
+
+  // experiences CRUD (simple)
+  async listExperiences(user_id) {
+    return await supabaseClient.from('experiences').select('*').eq('user_id', user_id).order('created_at', { ascending: false });
+  },
+  async insertExperiences(rows) {
+    return await supabaseClient.from('experiences').insert(rows);
+  },
+  async replaceExperiencesForUser(user_id, rows) {
+    // delete and insert (simple sync)
+    await supabaseClient.from('experiences').delete().eq('user_id', user_id);
+    if (rows && rows.length) return await supabaseClient.from('experiences').insert(rows);
+    return { error: null };
+  },
+
+  // education CRUD (simple)
+  async listEducation(user_id) {
+    return await supabaseClient.from('education').select('*').eq('user_id', user_id).order('created_at', { ascending: false });
+  },
+  async replaceEducationForUser(user_id, rows) {
+    await supabaseClient.from('education').delete().eq('user_id', user_id);
+    if (rows && rows.length) return await supabaseClient.from('education').insert(rows);
+    return { error: null };
+  },
+
+  // Redirect helpers
+  async requireAuthOrRedirect(redirectTo = 'login.html') {
+    const u = await this.getUser();
+    if (!u) {
+      window.location.href = redirectTo;
+      return null;
     }
-    return true;
-  }
+    return u;
+  },
 
-  global.RB = {
-    setLoggedIn, logout, isLoggedIn, getLoggedInUser,
-    saveUserProfile, loadUserProfile,
-    saveResume, loadResume,
-    requireLogin
-  };
-})(window);
+  // small helper to extract user id
+  async currentUserId() {
+    const u = await this.getUser();
+    return u?.id || null;
+  }
+};

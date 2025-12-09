@@ -1,64 +1,28 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login — Resume Builder</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="min-h-screen bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center p-6">
-  <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Welcome Back</h1>
-      <p class="text-gray-600">Login to access your resume</p>
-    </div>
+<!-- After supabase UMD + common.js -->
+<script src="common.js"></script>
+<script>
+  (function(){
+    const btn = document.getElementById('btn-login') || document.querySelector('[data-login]');
+    if (!btn) return console.warn('Login button not found, skip wiring');
 
-    <form id="loginForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Email</label>
-        <input id="email" type="email" required class="w-full px-4 py-3 border rounded-lg" placeholder="you@example.com"/>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Password</label>
-        <input id="password" type="password" required class="w-full px-4 py-3 border rounded-lg" placeholder="••••••••"/>
-      </div>
-
-      <div class="flex justify-between items-center">
-        <button type="button" id="forgotBtn" class="text-purple-600 text-sm">Forgot?</button>
-        <button type="submit" class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-lg">Login</button>
-      </div>
-
-      <p class="text-center text-gray-600">Don't have an account? <a id="goSignup" href="#" class="text-purple-600 font-semibold">Sign Up</a></p>
-    </form>
-  </div>
-
-  <script>
-    // Navigate helpers
-    document.getElementById('goSignup').addEventListener('click', (e)=>{ e.preventDefault(); location.href='signup.html'; });
-    document.getElementById('forgotBtn').addEventListener('click', ()=> location.href='forgot.html');
-
-    // Login handler (simple localStorage user simulation)
-    document.getElementById('loginForm').addEventListener('submit', function(e){
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      // Simple auth: check saved user or allow any
-      const saved = JSON.parse(localStorage.getItem('rb_user') || 'null');
-      if (saved && saved.email === email && saved.password === password) {
-        localStorage.setItem('rb_logged_in', JSON.stringify({email}));
-        location.href = 'main.html';
-      } else if (!saved) {
-        // If no saved user, allow login and set minimal user (for convenience)
-        localStorage.setItem('rb_user', JSON.stringify({email, password}));
-        localStorage.setItem('rb_logged_in', JSON.stringify({email}));
-        location.href = 'main.html';
-      } else {
-        alert('Invalid credentials. Try signing up.');
-      }
-    });
+      const email = (document.getElementById('li-email')||{}).value || (document.querySelector('[name="email"]')||{}).value;
+      const password = (document.getElementById('li-password')||{}).value || (document.querySelector('[name="password"]')||{}).value;
+      if (!email || !password) return alert('Enter email & password');
 
-    // If already logged in, go to main
-    (function(){ if (localStorage.getItem('rb_logged_in')) location.href='main.html'; })();
-  </script>
-</body>
-</html>
+      btn.disabled = true;
+      btn.innerText = 'Logging in...';
+
+      const { data, error } = await Common.signIn(email, password);
+      if (error) {
+        btn.disabled = false;
+        btn.innerText = 'Log in';
+        return alert('Login error: ' + error.message);
+      }
+
+      // On success redirect to home
+      window.location.href = 'home.html';
+    });
+  })();
+</script>

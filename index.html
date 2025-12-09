@@ -1,55 +1,42 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sign Up — Resume Builder</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="min-h-screen bg-gradient-to-r from-indigo-600 to-teal-600 flex items-center justify-center p-6">
-  <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Create Account</h1>
-      <p class="text-gray-600">Sign up to build your resume</p>
-    </div>
+<!-- Ensure this is after: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script> -->
+<script src="common.js"></script>
 
-    <form id="signupForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Full Name</label>
-        <input id="name" type="text" required class="w-full px-4 py-3 border rounded-lg" placeholder="John Doe"/>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Email</label>
-        <input id="email" type="email" required class="w-full px-4 py-3 border rounded-lg" placeholder="you@example.com"/>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Password</label>
-        <input id="password" type="password" required minlength="8" class="w-full px-4 py-3 border rounded-lg" placeholder="At least 8 chars"/>
-      </div>
+<script>
+  // Signup form wiring (assumes input IDs: su-email, su-password, su-fullname optional)
+  (function(){
+    const btn = document.getElementById('btn-signup') || document.getElementById('signup-submit');
+    if (!btn) return console.warn('Signup button not found, skip signup wiring');
 
-      <div class="flex justify-between items-center">
-        <button type="button" id="backLogin" class="text-gray-600">← Back to Login</button>
-        <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg">Sign Up</button>
-      </div>
-    </form>
-  </div>
-
-  <script>
-    document.getElementById('backLogin').addEventListener('click', ()=> location.href='login.html');
-
-    document.getElementById('signupForm').addEventListener('submit', function(e){
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      if (password.length < 8) { alert('Password must be at least 8 characters'); return; }
-      localStorage.setItem('rb_user', JSON.stringify({name, email, password}));
-      localStorage.setItem('rb_logged_in', JSON.stringify({email}));
-      // short success, then go to main
-      location.href = 'main.html';
-    });
+      const email = (document.getElementById('su-email') || {}).value || (document.querySelector('[name="email"]')||{}).value;
+      const password = (document.getElementById('su-password') || {}).value || (document.querySelector('[name="password"]')||{}).value;
+      const full = (document.getElementById('su-fullname') || {}).value || (document.getElementById('su-name')||{}).value || null;
 
-    (function(){ if (localStorage.getItem('rb_logged_in')) location.href='main.html'; })();
-  </script>
-</body>
-</html>
+      if (!email || !password) return alert('Enter email & password');
+      btn.disabled = true;
+      btn.innerText = 'Signing up...';
+
+      const { data, error } = await Common.signUp(email, password);
+      if (error) {
+        btn.disabled = false;
+        btn.innerText = 'Sign up';
+        return alert('Signup error: ' + error.message);
+      }
+
+      // try to sign in automatically (if allowed)
+      try {
+        await Common.signIn(email, password);
+      } catch (e) { /* ignore */ }
+
+      // upsert a minimal profile row (id = user.id). We wait for getUser to be available.
+      const user = await Common.getUser();
+      if (user && full) {
+        await Common.upsertProfile({ id: user.id, full_name: full });
+      }
+
+      // redirect to home
+      window.location.href = 'home.html';
+    });
+  })();
+</script>

@@ -1,266 +1,139 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Resume Builder — Main</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="min-h-screen bg-gradient-to-r from-indigo-700 to-purple-700 p-6 text-white">
-  <div class="max-w-4xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 id="formTitle" class="text-3xl font-bold">Build Your Resume</h1>
-        <p id="formSubtitle" class="opacity-90">Fill out the sections below</p>
-      </div>
-      <div class="flex items-center gap-3">
-        <button id="createNew" class="bg-green-500 px-4 py-2 rounded">Create New</button>
-        <button id="logout" class="bg-red-500 px-4 py-2 rounded">Logout</button>
-      </div>
-    </div>
-
-    <div id="successMsg" class="hidden mb-4 p-4 rounded bg-green-500 text-white"></div>
-
-    <!-- Resume Form -->
-    <form id="resumeForm" class="bg-white text-gray-800 rounded-xl p-6 mb-6">
-      <div class="mb-4">
-        <label class="block font-semibold">Full Name *</label>
-        <input id="fullName" class="w-full border px-3 py-2 rounded" required />
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block font-semibold">Email *</label>
-          <input id="email" type="email" class="w-full border px-3 py-2 rounded" required />
-        </div>
-        <div>
-          <label class="block font-semibold">Phone</label>
-          <input id="phone" class="w-full border px-3 py-2 rounded" />
-        </div>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block font-semibold">Location</label>
-          <input id="location" class="w-full border px-3 py-2 rounded" />
-        </div>
-        <div>
-          <label class="block font-semibold">LinkedIn</label>
-          <input id="linkedin" class="w-full border px-3 py-2 rounded" />
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="block font-semibold">Work Experience (JSON auto-handled)</label>
-        <div id="workContainer"></div>
-        <button type="button" id="addWork" class="mt-2 bg-green-500 text-white px-3 py-1 rounded">+ Add Work</button>
-      </div>
-
-      <div class="mb-4">
-        <label class="block font-semibold">Education</label>
-        <div id="eduContainer"></div>
-        <button type="button" id="addEdu" class="mt-2 bg-green-500 text-white px-3 py-1 rounded">+ Add Education</button>
-      </div>
-
-      <div class="mb-4">
-        <label class="block font-semibold">Certifications</label>
-        <div id="certContainer"></div>
-        <button type="button" id="addCert" class="mt-2 bg-green-500 text-white px-3 py-1 rounded">+ Add Certification</button>
-      </div>
-
-      <div class="flex justify-center">
-        <button type="submit" class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-3 rounded">Submit</button>
-      </div>
-    </form>
-
-    <!-- Profile View -->
-    <div id="profileView" class="hidden bg-white text-gray-800 rounded-xl p-6">
-      <h2 class="text-xl font-bold mb-4">Profile</h2>
-      <div id="profileContent"></div>
-      <div class="mt-4 flex gap-3">
-        <button id="editBtn" class="bg-purple-600 text-white px-4 py-2 rounded">Edit</button>
-        <button id="newResumeBtn" class="bg-green-600 text-white px-4 py-2 rounded">Create New Resume</button>
-      </div>
-    </div>
-  </div>
-
+<!-- After UMD + common.js -->
+<script src="common.js"></script>
 <script>
-  // require login
-  if (!localStorage.getItem('rb_logged_in')) location.href='login.html';
+(async function(){
+  // require auth or go to login
+  const user = await Common.requireAuthOrRedirect('login.html');
+  if (!user) return;
 
-  const resumeForm = document.getElementById('resumeForm');
-  const successMsg = document.getElementById('successMsg');
-  const profileView = document.getElementById('profileView');
-  const profileContent = document.getElementById('profileContent');
+  // helper to find input by id (tries different candidates)
+  const $ = (ids) => {
+    if (!Array.isArray(ids)) ids = [ids];
+    for (const id of ids) {
+      const el = document.getElementById(id) || document.querySelector('[name="'+id+'"]');
+      if (el) return el;
+    }
+    return null;
+  };
 
-  // containers
-  const workContainer = document.getElementById('workContainer');
-  const eduContainer = document.getElementById('eduContainer');
-  const certContainer = document.getElementById('certContainer');
+  // common field ids used in our pages previously
+  const fullNameEl = $( ['full_name','su-full','su_name','fullname'] );
+  const emailEl = $( ['email','li-email','su-email'] );
+  const phoneEl = $( ['phone'] );
+  const locationEl = $( ['location'] );
+  const linkedinEl = $( ['linkedin'] );
 
-  // helpers to create simple entries
-  function createWorkEntry(obj = {}) {
-    const div = document.createElement('div');
-    div.className = 'p-3 border rounded mb-2 bg-gray-50';
-    div.innerHTML = `
-      <div class="grid md:grid-cols-3 gap-2">
-        <input placeholder="Company" class="work-comp border px-2 py-1" value="${obj.company||''}">
-        <input placeholder="Title" class="work-title border px-2 py-1" value="${obj.title||''}">
-        <input placeholder="Dates" class="work-dates border px-2 py-1" value="${obj.dates||''}">
-      </div>
-      <div class="text-right mt-2"><button class="removeWork bg-red-500 text-white px-2 py-1 rounded">Remove</button></div>
-    `;
-    div.querySelector('.removeWork').addEventListener('click', ()=>div.remove());
-    workContainer.appendChild(div);
-  }
-  function createEduEntry(obj={}) {
-    const div = document.createElement('div');
-    div.className = 'p-3 border rounded mb-2 bg-gray-50';
-    div.innerHTML = `
-      <div class="grid md:grid-cols-3 gap-2">
-        <input placeholder="Degree" class="edu-degree border px-2 py-1" value="${obj.degree||''}">
-        <input placeholder="Institution" class="edu-inst border px-2 py-1" value="${obj.institution||''}">
-        <input placeholder="Graduation" class="edu-grad border px-2 py-1" value="${obj.graduation||''}">
-      </div>
-      <div class="text-right mt-2"><button class="removeEdu bg-red-500 text-white px-2 py-1 rounded">Remove</button></div>
-    `;
-    div.querySelector('.removeEdu').addEventListener('click', ()=>div.remove());
-    eduContainer.appendChild(div);
-  }
-  function createCertEntry(obj={}) {
-    const div = document.createElement('div');
-    div.className = 'p-3 border rounded mb-2 bg-gray-50';
-    div.innerHTML = `
-      <div class="grid md:grid-cols-3 gap-2">
-        <input placeholder="Name" class="cert-name border px-2 py-1" value="${obj.name||''}">
-        <input placeholder="Org" class="cert-org border px-2 py-1" value="${obj.org||''}">
-        <input placeholder="Date" class="cert-date border px-2 py-1" value="${obj.date||''}">
-      </div>
-      <div class="text-right mt-2"><button class="removeCert bg-red-500 text-white px-2 py-1 rounded">Remove</button></div>
-    `;
-    div.querySelector('.removeCert').addEventListener('click', ()=>div.remove());
-    certContainer.appendChild(div);
+  // load profile from DB if exists
+  const { data: profile, error: pErr } = await Common.getProfileById(user.id);
+  if (pErr) console.log('profile load error', pErr);
+
+  if (profile) {
+    if (fullNameEl) fullNameEl.value = profile.full_name || '';
+    if (emailEl) emailEl.value = profile.email || user.email || '';
+    if (phoneEl) phoneEl.value = profile.phone || '';
+    if (locationEl) locationEl.value = profile.location || '';
+    if (linkedinEl) linkedinEl.value = profile.linkedin || '';
+  } else {
+    if (emailEl) emailEl.value = user.email || '';
   }
 
-  document.getElementById('addWork').addEventListener('click', ()=> createWorkEntry());
-  document.getElementById('addEdu').addEventListener('click', ()=> createEduEntry());
-  document.getElementById('addCert').addEventListener('click', ()=> createCertEntry());
+  // load experiences & education into small UI lists if you have containers with these ids
+  const workContainer = document.getElementById('experiences-list') || document.getElementById('work-list') || document.getElementById('workList');
+  const eduContainer = document.getElementById('education-list') || document.getElementById('edu-list') || document.getElementById('eduList');
 
-  // Load draft if present
-  function loadDraft() {
-    const draft = JSON.parse(localStorage.getItem('rb_draft_resume') || 'null');
-    if (!draft) return;
-    document.getElementById('fullName').value = draft.full_name || '';
-    document.getElementById('email').value = draft.email || '';
-    document.getElementById('phone').value = draft.phone || '';
-    document.getElementById('location').value = draft.location || '';
-    document.getElementById('linkedin').value = draft.linkedin || '';
-    // populate arrays
-    (draft.work_experiences || []).forEach(w => createWorkEntry(w));
-    (draft.education_entries || []).forEach(e => createEduEntry(e));
-    (draft.certifications || []).forEach(c => createCertEntry(c));
+  if (workContainer) {
+    const { data: exps, error } = await Common.listExperiences(user.id);
+    if (error) console.log('exps load err', error);
+    workContainer.innerHTML = '';
+    if (exps && exps.length) {
+      exps.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.marginBottom = '8px';
+        div.innerHTML = `<strong>${e.title||''}</strong> — ${e.company||''}<br/><small>${e.start_date||''} - ${e.end_date||'Present'}</small>`;
+        workContainer.appendChild(div);
+      });
+    } else {
+      workContainer.innerHTML = '<small>No experiences yet.</small>';
+    }
   }
-  loadDraft();
 
-  // Submit handler
-  resumeForm.addEventListener('submit', function(e){
-    e.preventDefault();
-    const work = Array.from(document.querySelectorAll('.work-comp')).map((el,i)=>({
-      company: el.value.trim(),
-      title: document.querySelectorAll('.work-title')[i].value.trim(),
-      dates: document.querySelectorAll('.work-dates')[i].value.trim()
-    })).filter(x=>x.company || x.title || x.dates);
+  if (eduContainer) {
+    const { data: edus, error } = await Common.listEducation(user.id);
+    if (error) console.log('edu load err', error);
+    eduContainer.innerHTML = '';
+    if (edus && edus.length) {
+      edus.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.marginBottom = '8px';
+        div.innerHTML = `<strong>${d.degree||''}</strong> — ${d.institution||''}<br/><small>${d.start_date||''} - ${d.end_date||''}</small>`;
+        eduContainer.appendChild(div);
+      });
+    } else {
+      eduContainer.innerHTML = '<small>No education yet.</small>';
+    }
+  }
 
-    const edu = Array.from(document.querySelectorAll('.edu-degree')).map((el,i)=>({
-      degree: el.value.trim(),
-      institution: document.querySelectorAll('.edu-inst')[i].value.trim(),
-      graduation: document.querySelectorAll('.edu-grad')[i].value.trim()
-    })).filter(x=>x.degree || x.institution || x.graduation);
-
-    const certs = Array.from(document.querySelectorAll('.cert-name')).map((el,i)=>({
-      name: el.value.trim(),
-      org: document.querySelectorAll('.cert-org')[i].value.trim(),
-      date: document.querySelectorAll('.cert-date')[i].value.trim()
-    })).filter(x=>x.name || x.org || x.date);
-
-    const formData = {
-      id: Date.now().toString(),
-      full_name: document.getElementById('fullName').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
-      location: document.getElementById('location').value.trim(),
-      linkedin: document.getElementById('linkedin').value.trim(),
-      work_experiences: work,
-      education_entries: edu,
-      certifications: certs,
-      created_at: new Date().toISOString()
+  // Save profile button(s) — tries multiple ids your pages may use
+  const saveBtns = Array.from(document.querySelectorAll('#btn-save-profile, #save-profile, [data-save-profile]'));
+  saveBtns.forEach(b => b.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    const payload = {
+      id: user.id,
+      full_name: fullNameEl ? fullNameEl.value || null : null,
+      email: emailEl ? emailEl.value || null : null,
+      phone: phoneEl ? phoneEl.value || null : null,
+      location: locationEl ? locationEl.value || null : null,
+      linkedin: linkedinEl ? linkedinEl.value || null : null
     };
-
-    // store in array
-    const all = JSON.parse(localStorage.getItem('rb_resumes') || '[]');
-    all.push(formData);
-    localStorage.setItem('rb_resumes', JSON.stringify(all));
-    // make this the submittedData
-    localStorage.setItem('rb_last_submitted', JSON.stringify(formData));
-
-    successMsg.textContent = 'Resume submitted successfully!';
-    successMsg.classList.remove('hidden');
-    profileContent.innerHTML = renderProfileHTML(formData);
-    profileView.classList.remove('hidden');
-    resumeForm.style.display = 'none';
-    setTimeout(()=> successMsg.classList.add('hidden'), 3000);
+    const { error } = await Common.upsertProfile(payload);
+    if (error) return alert('Save error: ' + error.message);
+    alert('Profile saved');
+    // reload small lists if present (optional)
   });
 
-  function renderProfileHTML(data){
-    return `
-      <p><strong>Name:</strong> ${data.full_name}</p>
-      <p><strong>Email:</strong> ${data.email}</p>
-      <p><strong>Phone:</strong> ${data.phone}</p>
-      <p><strong>Location:</strong> ${data.location}</p>
-      <h3 class="mt-4 font-semibold">Work Experience</h3>
-      ${data.work_experiences.map(w=>`<div class="p-2 bg-gray-100 rounded mb-2"><strong>${w.title}</strong> @ ${w.company} <div class="text-sm text-gray-700">${w.dates}</div></div>`).join('') || '<p class="text-sm">—</p>'}
-      <h3 class="mt-4 font-semibold">Education</h3>
-      ${data.education_entries.map(e=>`<div class="p-2 bg-gray-100 rounded mb-2"><strong>${e.degree}</strong> — ${e.institution} <div class="text-sm text-gray-700">${e.graduation}</div></div>`).join('') || '<p class="text-sm">—</p>'}
-      <h3 class="mt-4 font-semibold">Certifications</h3>
-      ${data.certifications.map(c=>`<div class="p-2 bg-gray-100 rounded mb-2">${c.name} — ${c.org} ${c.date?`(${c.date})`:''}</div>`).join('') || '<p class="text-sm">—</p>'}
-    `;
+  // Add experience handler (if btn exists)
+  const addExpBtn = document.getElementById('btn-add-exp') || document.getElementById('btn-add-exp') || document.getElementById('btn-add-work') || document.getElementById('add-work');
+  if (addExpBtn) {
+    addExpBtn.addEventListener('click', async () => {
+      // try to collect fields (fallback: prompt)
+      const company = prompt('Company name');
+      if (!company) return;
+      const title = prompt('Title/Role') || '';
+      const start = prompt('Start date (YYYY-MM)') || null;
+      const end = prompt('End date (YYYY-MM or empty)') || null;
+      const row = { user_id: user.id, company, title, start_date: start, end_date: end };
+      const { error } = await Common.insertExperiences([row]);
+      if (error) return alert('Add experience error: ' + error.message);
+      alert('Experience added — refresh view');
+      location.reload();
+    });
   }
 
-  // If there is a last submitted, show it
-  (function(){
-    const last = JSON.parse(localStorage.getItem('rb_last_submitted') || 'null');
-    if (last) {
-      profileContent.innerHTML = renderProfileHTML(last);
-      profileView.classList.remove('hidden');
-      resumeForm.style.display = 'none';
-    }
-  })();
+  // Add education handler
+  const addEduBtn = document.getElementById('btn-add-edu') || document.getElementById('btn-add-education') || document.getElementById('add-edu');
+  if (addEduBtn) {
+    addEduBtn.addEventListener('click', async () => {
+      const institution = prompt('Institution') || '';
+      if (!institution) return;
+      const degree = prompt('Degree') || '';
+      const start = prompt('Start date') || null;
+      const end = prompt('End date') || null;
+      const row = { user_id: user.id, institution, degree, start_date: start, end_date: end };
+      const { error } = await Common.replaceEducationForUser(user.id, [row]); // or insert
+      if (error) return alert('Add education error: ' + error.message);
+      alert('Education added — refresh view');
+      location.reload();
+    });
+  }
 
-  // Buttons
-  document.getElementById('logout').addEventListener('click', ()=>{
-    localStorage.removeItem('rb_logged_in');
-    location.href='login.html';
-  });
-  document.getElementById('createNew').addEventListener('click', ()=> location.href='job_layout.html');
-  document.getElementById('newResumeBtn').addEventListener('click', ()=> location.href='job_layout.html');
-  document.getElementById('editBtn').addEventListener('click', ()=>{
-    profileView.classList.add('hidden');
-    resumeForm.style.display = 'block';
-    // load last submitted into form
-    const last = JSON.parse(localStorage.getItem('rb_last_submitted') || 'null');
-    if (last) {
-      document.getElementById('fullName').value = last.full_name;
-      document.getElementById('email').value = last.email;
-      document.getElementById('phone').value = last.phone;
-      document.getElementById('location').value = last.location;
-      document.getElementById('linkedin').value = last.linkedin;
-      // clear containers
-      workContainer.innerHTML = ''; eduContainer.innerHTML = ''; certContainer.innerHTML = '';
-      (last.work_experiences||[]).forEach(w=>createWorkEntry(w));
-      (last.education_entries||[]).forEach(e=>createEduEntry(e));
-      (last.certifications||[]).forEach(c=>createCertEntry({name:c.name, org:c.organization || c.org, date:c.date || c.date}));
-    }
-  });
+  // Logout wiring if button exists anywhere
+  const logoutBtns = Array.from(document.querySelectorAll('#btn-logout, #logout, [data-logout]'));
+  logoutBtns.forEach(b => b.addEventListener('click', async () => {
+    await Common.signOut();
+    window.location.href = 'login.html';
+  }));
+
+})();
 </script>
-</body>
-</html>
