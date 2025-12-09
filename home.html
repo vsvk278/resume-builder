@@ -263,7 +263,7 @@
     if(error){ console.log('loadExperiences error', error); container.innerHTML = '<small>Error loading experiences</small>'; return }
     if(!data || data.length===0){ container.innerHTML = '<small>No experiences yet.</small>'; return }
     container.innerHTML = data.map(e => {
-      const bullets = (e.bullets||'').split('\n').map(b => `<li>${escapeHtml(b)}</li>`).join('')
+      const bullets = (e.bullets||'').split('\\n').map(b => `<li>${escapeHtml(b)}</li>`).join('')
       return `
         <div class="exper-card">
           <div><strong>${escapeHtml(e.title||'')}</strong> • ${escapeHtml(e.company||'')}
@@ -393,7 +393,7 @@
     if(contact.location) contactLines.push(contact.location)
     if(contact.phone) contactLines.push(contact.phone)
     if(contact.email) contactLines.push(contact.email)
-    if(contact.linkedin) contactLines.push(`<a href="${contact.linkedin}" target="_blank" rel="noopener">${contact.linkedin.replace(/^https?:\/\//,'')}</a>`)
+    if(contact.linkedin) contactLines.push(`<a href="${contact.linkedin}" target="_blank" rel="noopener">${contact.linkedin.replace(/^https?:\\/\\//,'')}</a>`)
 
     const exHtml = experiences.map(e => {
       const bullets = (e.bullets || []).map(b => `<li class="bullet">${escapeHtml(b)}</li>`).join('')
@@ -485,7 +485,7 @@
       company: e.company,
       start_date: e.start_date,
       end_date: e.end_date,
-      bullets: (e.bullets || '').split('\n').map(b => b.trim()).filter(Boolean)
+      bullets: (e.bullets || '').split('\\n').map(b => b.trim()).filter(Boolean)
     }))
     const edus = (edusRes?.data || []).map(d => ({
       degree: d.degree, institution: d.institution, start_date: d.start_date, end_date: d.end_date, notes: d.notes
@@ -564,7 +564,7 @@ Rules:
     const raw = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || ''
     let json
     try{ json = JSON.parse(raw) } catch(e){
-      const m = raw.match(/\{[\s\S]*\}/)
+      const m = raw.match(/\\{[\\s\\S]*\\}/)
       if(m) try{ json = JSON.parse(m[0]) } catch(err){ json = null }
     }
 
@@ -598,6 +598,8 @@ Rules:
     try { await callLLMandRender() }
     catch(err){ console.error(err); document.getElementById('llm-status').textContent = 'Error: ' + (err.message || err); alert('Error: ' + (err.message || err)) }
   }
+
+  // end of script
   </script>
 </body>
 </html>
