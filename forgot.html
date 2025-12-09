@@ -2,46 +2,45 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>ResumeBuilder — Forgot</title>
+  <title>Forgot Password</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap');
-    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;height:100vh;background:linear-gradient(120deg,#0f544d,#13c7b3);display:flex;align-items:center;justify-content:center;padding:24px;color:#fff}
-    .card{width:min(880px,95%);background:transparent;padding:40px;border-radius:8px;text-align:center}
-    h1{font-weight:900;font-size:64px;margin:0}
-    p.lead{margin:6px 0 22px;font-weight:600;color:#e9f9f5}
-    label{display:block;margin-top:8px;font-weight:700;letter-spacing:1px}
-    input{width:70%;max-width:820px;padding:16px;border-radius:36px;border:none;margin-top:10px;display:block;margin-left:auto;margin-right:auto;background:#fff;color:#023;font-weight:700}
-    .btn{margin-top:18px;padding:14px 36px;border-radius:36px;border:none;background:linear-gradient(180deg,#02d3c4,#00b9a7);color:#012;font-weight:900;cursor:pointer;box-shadow:0 14px 22px rgba(0,0,0,0.25)}
-    a.link{display:block;margin-top:18px;color:#fff;text-decoration:underline;font-weight:800}
+    html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;color:#fff}
+    body{display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#0f3a37,#18c1b3);padding:48px}
+    .card{width:900px;max-width:96%;background:linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));padding:40px;border-radius:12px;box-shadow:0 30px 60px rgba(0,0,0,0.35);text-align:center}
+    h1{font-size:68px;margin:0 0 8px;font-weight:800}
+    p.lead{margin:0 0 18px;opacity:0.95}
+    label{display:block;font-size:12px;margin:8px 0 6px 0;letter-spacing:1px}
+    input{width:70%;max-width:720px;padding:18px;border-radius:999px;border:0;background:#fff;color:#1b6b66;font-weight:700;font-size:16px}
+    .btn{display:inline-block;margin-top:22px;padding:14px 28px;border-radius:34px;background:linear-gradient(180deg,#0fb1a7,#06d1c0);border:0;color:#012;font-weight:800;cursor:pointer}
+    a{display:block;margin-top:16px;color:#fff;text-decoration:underline}
   </style>
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
-
   <div class="card">
     <h1>Forgot Password</h1>
     <p class="lead">New Password</p>
 
-    <label for="fg-email">EMAIL</label>
-    <input id="fg-email" type="email" placeholder="YOUR EMAIL ADDRESS" />
+    <label>EMAIL</label>
+    <input id="fg-email" placeholder="YOUR EMAIL ADDRESS" />
 
-    <button id="btn-send" class="btn">SEND</button>
+    <div>
+      <button class="btn" id="btn-send">SEND</button>
+    </div>
 
-    <a class="link" href="login.html">Back to Login</a>
-    <p id="msg" style="margin-top:12px;color:#fff;font-weight:700"></p>
+    <a href="login.html">Back to Login</a>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="common.js"></script>
   <script>
     document.getElementById('btn-send').onclick = async () => {
       const email = document.getElementById('fg-email').value.trim();
-      const msg = document.getElementById('msg');
-      if(!email){ msg.textContent = 'Enter your email'; return; }
-      msg.textContent = 'Sending reset email...';
-      const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html' });
-      if (error) msg.textContent = 'Error: ' + error.message;
-      else msg.textContent = 'If that email exists, a reset link was sent. Check inbox.';
+      if (!email) return alert('Enter your email');
+      const { data, error } = await App.client.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login.html' });
+      if (error) return alert('Error: ' + error.message);
+      alert('Password reset requested — check your email.');
+      window.location.href = 'login.html';
     };
   </script>
 </body>

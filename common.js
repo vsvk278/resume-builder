@@ -1,33 +1,62 @@
 // common.js
-// Shared Supabase client + small helper functions used by all pages.
-// Loads after the UMD supabase script on every page.
+// Put this file in the same folder as your HTML files.
+// This exposes a global `App` object with helper functions used by each page.
 
+// --- CONFIG: set your Supabase values (already from your project) ---
 const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7';
 
-// create client (UMD exposes global `supabase`)
-const { createClient } = supabase;
-window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize client (assumes supabase UMD script loaded before this file)
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Auth redirect helper
-window.redirectToHome = async function() {
-  const { data: { user } } = await window.supabaseClient.auth.getUser();
-  if (user) {
-    location.href = 'home.html';
-  } else {
-    location.href = 'login.html';
-  }
-};
+// Simple helpers exposed on App
+window.App = {
+  client: supabaseClient,
 
-// Simple check used on pages: if not logged in -> redirect to login
-window.ensureAuthOrRedirect = async function() {
-  const { data: { user } } = await window.supabaseClient.auth.getUser();
-  if (!user) location.href = 'login.html';
-  return user;
-};
+  // get current user (returns { user } similar to supabase)
+  async getUser() {
+    const { data } = await supabaseClient.auth.getUser();
+    return data?.user || null;
+  },
 
-// Sign out helper used by pages:
-window.doSignOut = async function() {
-  await window.supabaseClient.auth.signOut();
-  location.href = 'login.html';
+  // on auth change (callback receives session)
+  onAuthChange(cb) {
+    supabaseClient.auth.onAuthStateChange((event, session) => cb(event, session));
+  },
+
+  // sign out
+  async signOut() {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'login.html';
+  },
+
+  // upsert profile to 'profiles' table
+  async upsertProfile(payload) {
+    return await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' });
+  },
+
+  // get profile row by user id
+  async getProfile(userId) {
+    const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+    return { data, error };
+  },
+
+  // navigate to home (used after login)
+  async gotoHome() {
+    window.location.href = 'home.html';
+  },
+
+  // convenience: fetch experiences list / education (basic)
+  async listExperiences(userId) {
+    const { data } = await supabaseClient.from('experiences').select('*').eq('user_id', userId).order('created_at', { ascending:false });
+    return data || [];
+  },
+
+  async listEducation(userId) {
+    const { data } = await supabaseClient.from('education').select('*').eq('user_id', userId).order('created_at', { ascending:false });
+    return data || [];
+  },
+
+  // small helper to format optional string
+  esc(s) { return s ? String(s) : ''; }
 };
