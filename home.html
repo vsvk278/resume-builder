@@ -1,321 +1,72 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ResumeBuilder — Home</title>
-  <style>
-    :root{ --accent:#06b6d4; --muted:#617084; --card:#0b1220; --bg:#0f1720; }
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#e6eef0;background:linear-gradient(180deg,#071424,#071a22);}
-    .wrapper{ max-width:980px;margin:28px auto;padding:18px; }
-    .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; }
-    .card{ background:#071226; border-radius:10px; padding:16px; box-shadow: 0 8px 24px rgba(2,8,16,0.45); }
-    h2{ margin:0 0 6px 0; font-size:20px; color:#dff7f4; }
-    small{ color:#9fb3b2; }
-    .row{ display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap }
-    label{ color:#9fb3b2; font-size:13px; display:block; margin-bottom:6px; }
-    input, textarea, select { width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:#071226; color:#e6eef0; box-sizing:border-box; }
-    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    button{ padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:700; }
-    .btn-primary{ background:var(--accent); color:#022; }
-    .btn-danger{ background:#ef4444; color:#fff; }
-    .small-muted{ color:#789; font-size:13px; margin-top:8px; }
-    .list-item{ background: rgba(255,255,255,0.02); padding:10px; border-radius:8px; margin-top:8px; }
-    .flex-between{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    @media (max-width:720px){ .grid{ grid-template-columns: 1fr } .top{ flex-direction:column; align-items:flex-start; gap:8px } }
-  </style>
-
-  <!-- supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ResumeBuilder — Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg1:#0f4440; --bg2:#29d3c8}
+  html,body{height:100%;margin:0;font-family:Montserrat,Arial,Helvetica,sans-serif}
+  body{background:linear-gradient(130deg,var(--bg1) 0%, var(--bg2) 100%);display:flex;align-items:center;justify-content:center;padding:24px}
+  .wrap{max-width:880px;width:100%;background:rgba(255,255,255,0.03);padding:28px;border-radius:12px;color:#fff;box-shadow:0 30px 70px rgba(0,0,0,0.35)}
+  .top{display:flex;justify-content:space-between;align-items:center}
+  .btn{padding:8px 12px;border-radius:8px;border:0;background:linear-gradient(180deg,#07c7a8,#06b6d4);color:#012;font-weight:800;cursor:pointer}
+  .danger{background:#ef4444;color:#fff}
+  pre{background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;color:#eaf7f2;overflow:auto}
+</style>
 </head>
 <body>
-  <div class="wrapper">
+  <div class="wrap">
     <div class="top">
       <div>
-        <h2>ResumeLab — Dashboard</h2>
-        <small id="userEmail">Loading...</small>
+        <h2 style="margin:0">Resume Builder — Home</h2>
+        <div id="subtitle" style="opacity:0.95">Loading...</div>
       </div>
-      <div class="row">
-        <button id="btnLogout" class="btn-primary" style="background:#ef4444;color:#fff">Logout</button>
-      </div>
-    </div>
-
-    <div class="card" id="profileCard">
-      <h3 style="margin:0 0 8px 0">Your profile</h3>
-      <div class="grid">
-        <div>
-          <label>Full name</label>
-          <input id="full_name" type="text" placeholder="Full name" />
-        </div>
-        <div>
-          <label>Phone</label>
-          <input id="phone" type="text" placeholder="Phone" />
-        </div>
-        <div>
-          <label>Location</label>
-          <input id="location" type="text" placeholder="City, Country" />
-        </div>
-        <div>
-          <label>LinkedIn</label>
-          <input id="linkedin" type="text" placeholder="LinkedIn URL" />
-        </div>
-        <div style="grid-column:1 / -1;">
-          <label>GitHub</label>
-          <input id="github" type="text" placeholder="GitHub URL" />
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:12px;">
-        <button id="btnSaveProfile" class="btn btn-primary">Save Profile</button>
-        <div id="profileStatus" class="small-muted"></div>
+      <div>
+        <button id="btnProfile" class="btn">Edit profile</button>
+        <button id="btnLogout" class="btn danger">Logout</button>
       </div>
     </div>
 
-    <div style="height:12px"></div>
+    <h3 style="margin-top:18px">Profile</h3>
+    <pre id="profile">Loading...</pre>
 
-    <div class="card" id="experienceCard">
-      <div class="flex-between">
-        <h3 style="margin:0">Experience</h3>
-        <small class="small-muted">Add, refresh or delete</small>
-      </div>
-
-      <div style="margin-top:12px;">
-        <div class="grid">
-          <div><label>Company</label><input id="exp-company" type="text" placeholder="Company" /></div>
-          <div><label>Title</label><input id="exp-title" type="text" placeholder="Role/Title" /></div>
-          <div><label>Start date</label><input id="exp-start" type="date" /></div>
-          <div><label>End date</label><input id="exp-end" type="date" /></div>
-          <div style="grid-column:1 / -1;"><label>Bullets (one per line)</label><textarea id="exp-bullets" rows="3" placeholder="Achieved X..."></textarea></div>
-        </div>
-
-        <div class="row" style="margin-top:10px;">
-          <button id="btnAddExp" class="btn btn-primary">Add Experience</button>
-          <button id="btnRefreshExp" class="btn">Refresh</button>
-          <div id="expStatus" class="small-muted"></div>
-        </div>
-
-        <div id="expList" style="margin-top:12px;"><small class="small-muted">No experiences yet.</small></div>
-      </div>
-    </div>
-
-    <div style="height:12px"></div>
-
-    <div class="card" id="eduCard">
-      <div class="flex-between"><h3 style="margin:0">Education</h3><small class="small-muted">Add, refresh or delete</small></div>
-
-      <div style="margin-top:12px;">
-        <div class="grid">
-          <div><label>Institution</label><input id="edu-institution" type="text" placeholder="College / Univ" /></div>
-          <div><label>Degree</label><input id="edu-degree" type="text" placeholder="B.Sc / M.Tech" /></div>
-          <div><label>Start date</label><input id="edu-start" type="date" /></div>
-          <div><label>End date</label><input id="edu-end" type="date" /></div>
-          <div style="grid-column:1 / -1;"><label>Notes</label><textarea id="edu-notes" rows="2" placeholder="Honours, achievements"></textarea></div>
-        </div>
-
-        <div class="row" style="margin-top:10px;">
-          <button id="btnAddEdu" class="btn btn-primary">Add Education</button>
-          <button id="btnRefreshEdu" class="btn">Refresh</button>
-          <div id="eduStatus" class="small-muted"></div>
-        </div>
-
-        <div id="eduList" style="margin-top:12px;"><small class="small-muted">No education yet.</small></div>
-      </div>
-    </div>
-
+    <h3>Notes</h3>
+    <p style="opacity:0.95">This is your home page. Add edit/profile UI later — auth is working and you are redirected here after login.</p>
   </div>
 
-<script>
-/* ========== CONFIG: same Supabase project values ========== */
-const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7';
-/* ========================================================= */
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    async function requireAuth(){
+      const { data } = await supabase.auth.getUser()
+      const user = data?.user ?? null
+      if(!user) { location.href = 'login.html'; return null }
+      return user
+    }
 
-// UI refs
-const userEmail = document.getElementById('userEmail');
-const btnLogout = document.getElementById('btnLogout');
+    ;(async ()=>{
+      const user = await requireAuth()
+      if(!user) return
+      document.getElementById('subtitle').textContent = 'Logged in as ' + user.email
+      // try to fetch profiles row, but if not present show placeholder
+      try{
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        document.getElementById('profile').textContent = data ? JSON.stringify(data, null, 2) : 'No profile saved yet.'
+      }catch(e){
+        document.getElementById('profile').textContent = 'Error fetching profile: ' + (e.message||e)
+      }
+    })()
 
-const fullName = document.getElementById('full_name');
-const phone = document.getElementById('phone');
-const locationEl = document.getElementById('location');
-const linkedin = document.getElementById('linkedin');
-const github = document.getElementById('github');
-const btnSaveProfile = document.getElementById('btnSaveProfile');
-const profileStatus = document.getElementById('profileStatus');
-
-const expCompany = document.getElementById('exp-company');
-const expTitle = document.getElementById('exp-title');
-const expStart = document.getElementById('exp-start');
-const expEnd = document.getElementById('exp-end');
-const expBullets = document.getElementById('exp-bullets');
-const btnAddExp = document.getElementById('btnAddExp');
-const btnRefreshExp = document.getElementById('btnRefreshExp');
-const expList = document.getElementById('expList');
-const expStatus = document.getElementById('expStatus');
-
-const eduInst = document.getElementById('edu-institution');
-const eduDeg = document.getElementById('edu-degree');
-const eduStart = document.getElementById('edu-start');
-const eduEnd = document.getElementById('edu-end');
-const eduNotes = document.getElementById('edu-notes');
-const btnAddEdu = document.getElementById('btnAddEdu');
-const btnRefreshEdu = document.getElementById('btnRefreshEdu');
-const eduList = document.getElementById('eduList');
-const eduStatus = document.getElementById('eduStatus');
-
-function showErr(el, txt){ el.textContent = txt; el.style.color = '#fca5a5'; }
-function showOk(el, txt){ el.textContent = txt; el.style.color = '#b6f0e9'; }
-function clearMsg(el){ el.textContent = ''; }
-
-// Redirect to login
-btnLogout.addEventListener('click', async () => {
-  await supabaseClient.auth.signOut();
-  window.location.href = 'login.html';
-});
-
-// load user & profile
-async function loadProfile(){
-  const { data: { user }, error: uerr } = await supabaseClient.auth.getUser();
-  if(uerr || !user){ window.location.href = 'login.html'; return; }
-  userEmail.textContent = user.email || '';
-  // load profile row
-  const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-  if(error && error.code !== 'PGRST116'){ console.error('profile select err', error); }
-  if(data){
-    fullName.value = data.full_name || '';
-    phone.value = data.phone || '';
-    locationEl.value = data.location || '';
-    linkedin.value = data.linkedin || '';
-    github.value = data.github || '';
-  } else {
-    fullName.value = phone.value = locationEl.value = linkedin.value = github.value = '';
-  }
-}
-
-// save (upsert) profile
-btnSaveProfile.addEventListener('click', async () => {
-  profileStatus.textContent = '';
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if(!user) { showErr(profileStatus, 'Not authenticated'); return; }
-  showOk(profileStatus, 'Saving...');
-  const payload = {
-    id: user.id,
-    full_name: fullName.value || null,
-    phone: phone.value || null,
-    location: locationEl.value || null,
-    linkedin: linkedin.value || null,
-    github: github.value || null,
-    created_at: new Date()
-  };
-  const { error } = await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' });
-  if(error) showErr(profileStatus, 'Save error: ' + error.message);
-  else showOk(profileStatus, 'Profile saved');
-  setTimeout(()=> clearMsg(profileStatus), 1800);
-});
-
-// Experiences: load, add, delete
-async function loadExperiences(){
-  expStatus.textContent = '';
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if(!user){ expList.innerHTML = '<small>Login required</small>'; return; }
-  const { data, error } = await supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
-  if(error){ expList.innerHTML = '<small>Error loading</small>'; console.error(error); return; }
-  if(!data || data.length === 0){ expList.innerHTML = '<small class="small-muted">No experiences yet.</small>'; return; }
-  expList.innerHTML = data.map(e => {
-    const bullets = (e.bullets||'').split('\n').map(b => `<li style="margin-left:12px">${escapeHtml(b)}</li>`).join('');
-    return `<div class="list-item"><div class="flex-between"><strong>${escapeHtml(e.title||'')}</strong><button data-id="${e.id}" class="del-exp btn btn-danger" style="padding:6px 8px;border-radius:6px">Delete</button></div>
-            <small style="color:#9fb3b2">${escapeHtml(e.company||'')} • ${escapeHtml(e.start_date||'')} - ${escapeHtml(e.end_date||'') || 'Present'}</small>
-            <ul style="margin-top:8px">${bullets}</ul></div>`;
-  }).join('');
-  // attach delete handlers
-  document.querySelectorAll('.del-exp').forEach(btn => {
-    btn.onclick = async (ev) => {
-      if(!confirm('Delete this experience?')) return;
-      const id = ev.target.dataset.id;
-      const { error } = await supabaseClient.from('experiences').delete().eq('id', id);
-      if(error) showErr(expStatus, 'Delete error: ' + error.message); else { showOk(expStatus,'Deleted'); loadExperiences(); setTimeout(()=>clearMsg(expStatus),1400); }
-    };
-  });
-}
-
-btnAddExp.addEventListener('click', async () => {
-  expStatus.textContent = '';
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if(!user){ showErr(expStatus,'Login required'); return; }
-  const payload = {
-    user_id: user.id,
-    company: expCompany.value || null,
-    title: expTitle.value || null,
-    start_date: expStart.value || null,
-    end_date: expEnd.value || null,
-    bullets: expBullets.value || null,
-    created_at: new Date()
-  };
-  const { error } = await supabaseClient.from('experiences').insert(payload);
-  if(error) showErr(expStatus, 'Add error: ' + error.message);
-  else { showOk(expStatus,'Added'); expCompany.value=''; expTitle.value=''; expStart.value=''; expEnd.value=''; expBullets.value=''; loadExperiences(); setTimeout(()=>clearMsg(expStatus),1200); }
-});
-
-btnRefreshExp.addEventListener('click', loadExperiences);
-
-// Education
-async function loadEducation(){
-  eduStatus.textContent = '';
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if(!user){ eduList.innerHTML = '<small>Login required</small>'; return; }
-  const { data, error } = await supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
-  if(error){ eduList.innerHTML = '<small>Error loading</small>'; console.error(error); return; }
-  if(!data || data.length === 0){ eduList.innerHTML = '<small class="small-muted">No education yet.</small>'; return; }
-  eduList.innerHTML = data.map(e => {
-    return `<div class="list-item"><div class="flex-between"><strong>${escapeHtml(e.degree||'')}</strong><button data-id="${e.id}" class="del-edu btn btn-danger" style="padding:6px 8px;border-radius:6px">Delete</button></div>
-      <small style="color:#9fb3b2">${escapeHtml(e.institution||'')} • ${escapeHtml(e.start_date||'')} - ${escapeHtml(e.end_date||'')}</small>
-      <p style="margin-top:8px">${escapeHtml(e.notes||'')}</p></div>`;
-  }).join('');
-  document.querySelectorAll('.del-edu').forEach(btn => {
-    btn.onclick = async (ev) => {
-      if(!confirm('Delete this education?')) return;
-      const id = ev.target.dataset.id;
-      const { error } = await supabaseClient.from('education').delete().eq('id', id);
-      if(error) showErr(eduStatus, 'Delete error: ' + error.message); else { showOk(eduStatus,'Deleted'); loadEducation(); setTimeout(()=>clearMsg(eduStatus),1200); }
-    };
-  });
-}
-
-btnAddEdu.addEventListener('click', async () => {
-  eduStatus.textContent = '';
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if(!user){ showErr(eduStatus,'Login required'); return; }
-  const payload = {
-    user_id: user.id,
-    institution: eduInst.value || null,
-    degree: eduDeg.value || null,
-    start_date: eduStart.value || null,
-    end_date: eduEnd.value || null,
-    notes: eduNotes.value || null,
-    created_at: new Date()
-  };
-  const { error } = await supabaseClient.from('education').insert(payload);
-  if(error) showErr(eduStatus,'Add error: ' + error.message);
-  else { showOk(eduStatus,'Added'); eduInst.value=''; eduDeg.value=''; eduStart.value=''; eduEnd.value=''; eduNotes.value=''; loadEducation(); setTimeout(()=>clearMsg(eduStatus),1200); }
-});
-
-btnRefreshEdu.addEventListener('click', loadEducation);
-
-// helpers
-function escapeHtml(s){ if(!s) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-// on load: check auth and populate
-(async function init(){
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if(!user){ window.location.href = 'login.html'; return; }
-  document.getElementById('userEmail').textContent = user.email || '';
-  await loadProfile();
-  await loadExperiences();
-  await loadEducation();
-})();
-
-</script>
+    document.getElementById('btnLogout').addEventListener('click', async ()=>{
+      await supabase.auth.signOut()
+      location.href = 'login.html'
+    })
+    document.getElementById('btnProfile').addEventListener('click', ()=> alert('Add profile editor (future).'))
+  </script>
 </body>
 </html>

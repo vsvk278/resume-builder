@@ -1,63 +1,92 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ResumeBuilder — Signup</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg1:#0f3f3f; --bg2:#2fe0d0; --pill-bg:#ffffff; --pill-text:#1b2f2f; }
-  html,body{height:100%;margin:0;font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial;}
-  body{
-    background: linear-gradient(135deg,#09333a 0%, #16cfc0 100%);
-    display:flex;align-items:center;justify-content:center;
+  :root{
+    --bg1:#0f4440; --bg2:#29d3c8;
+    --white: #ffffff;
+    --pill-bg: #ffffff;
+    --pill-text:#0b2b2a;
   }
-  .wrap{ width:760px; max-width:94vw; padding:60px 40px; box-sizing:border-box; text-align:center; }
-  h1{ margin:0 0 10px; font-size:44px; color:#fff; font-weight:800; }
-  .subtitle{ color:rgba(255,255,255,0.9); margin-bottom:26px; font-weight:600; }
-  .form{ max-width:520px; margin:0 auto; display:flex;flex-direction:column; gap:18px; align-items:center;}
-  label.small{ width:100%; text-align:left; font-size:12px; letter-spacing:1px; color:rgba(255,255,255,0.95); font-weight:700; margin-left:6px; }
-  input{ width:100%; padding:18px 28px; border-radius:30px; border:0; background:var(--pill-bg); color:var(--pill-text); font-weight:700; letter-spacing:1px; text-transform:uppercase; box-shadow: 0 10px 30px rgba(2,20,20,0.08); font-size:14px; box-sizing:border-box; }
-  input::placeholder{ color:#446b69; opacity:0.9; font-weight:700; }
-  .btn{ margin-top:8px; padding:14px 34px; border-radius:30px; border:0; background:linear-gradient(180deg,#1bd0c1,#06b6d4); color:#012; font-weight:800; letter-spacing:2px; cursor:pointer; box-shadow: 0 14px 36px rgba(4,70,64,0.12); }
-  .small-link{ margin-top:12px;color:rgba(255,255,255,0.95); font-weight:700; text-decoration:underline; cursor:pointer; }
-  .note{ margin-top:18px; color:rgba(255,255,255,0.85); font-size:13px; }
-  @media (max-width:640px){
-    h1{ font-size:32px; }
-    .wrap{ padding:40px 20px; }
+  html,body{height:100%;margin:0;font-family:Montserrat,Arial,Helvetica,sans-serif}
+  body{
+    background: linear-gradient(130deg,var(--bg1) 0%, var(--bg2) 100%);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .page{max-width:760px;width:100%;text-align:center}
+  h1{color:var(--white);font-size:44px;margin:0 0 8px;font-weight:800}
+  .sub{color:rgba(255,255,255,0.9);margin-bottom:28px}
+  .form{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:18px;align-items:center}
+  label{width:100%;text-align:left;color:rgba(255,255,255,0.9);font-size:12px;font-weight:700;letter-spacing:1px}
+  .pill{
+    width:100%;background:var(--pill-bg);border-radius:40px;padding:16px 22px;border:0;box-sizing:border-box;
+    font-weight:700;color:var(--pill-text);text-transform:uppercase;letter-spacing:2px;outline:none;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08) inset;
+  }
+  .btn{
+    margin-top:6px;width:160px;background:linear-gradient(180deg,#07c7a8,#06b6d4);
+    color:#052021;border:0;padding:14px;border-radius:40px;font-weight:800;cursor:pointer;letter-spacing:2px;
+    box-shadow:0 14px 30px rgba(2,40,38,0.22);
+  }
+  .small{color:rgba(255,255,255,0.9);margin-top:18px}
+  .small a{color:#fff;text-decoration:underline;font-weight:800}
+  /* responsive */
+  @media (max-width:520px){
+    h1{font-size:28px}
+    .pill{padding:12px}
   }
 </style>
 </head>
 <body>
-  <div class="wrap" role="main" aria-label="Signup panel">
+  <div class="page">
     <h1>Create new Account</h1>
-    <div class="subtitle">Already Registered? <a href="login.html" style="color:#fff;font-weight:900;text-decoration:underline">Login</a></div>
+    <div class="sub">Already Registered? <a href="login.html" style="color:#fff;text-decoration:underline">Login</a></div>
 
-    <form class="form" onsubmit="return false;" aria-label="Signup form">
-      <div style="width:100%"><label class="small">NAME</label><input id="su-name" type="text" placeholder="Your full name" required></div>
-      <div style="width:100%"><label class="small">EMAIL</label><input id="su-email" type="email" placeholder="Your email address" required></div>
-      <div style="width:100%"><label class="small">PASSWORD</label><input id="su-pass" type="password" placeholder="Choose password" required></div>
-      <div style="width:100%"><label class="small">CONFIRM PASSWORD</label><input id="su-pass2" type="password" placeholder="Re-enter password" required></div>
+    <div class="form" id="signupForm">
+      <div style="width:100%"><label for="name">NAME</label><input id="name" class="pill" placeholder="Your full name" /></div>
+      <div style="width:100%"><label for="email">EMAIL</label><input id="email" class="pill" placeholder="your email address" type="email" /></div>
+      <div style="width:100%"><label for="pass">PASSWORD</label><input id="pass" class="pill" placeholder="choose password" type="password" /></div>
+      <div style="width:100%"><label for="pass2">CONFIRM PASSWORD</label><input id="pass2" class="pill" placeholder="re-enter password" type="password" /></div>
 
-      <button id="btn-signup" class="btn">SIGNUP</button>
-
-      <div class="note">By signing up you agree to our <strong style="text-decoration:underline">Terms</strong>.</div>
-    </form>
+      <button id="btnSignup" class="btn">SIGNUP</button>
+      <div class="small">By signing up you agree to our Terms. Already have an account? <a href="login.html">Log in</a></div>
+      <div id="msg" style="color:#ffecec;margin-top:10px"></div>
+    </div>
   </div>
 
-<script>
-  // Placeholder: replace with Supabase calls later
-  document.getElementById('btn-signup').addEventListener('click', async () => {
-    const n = document.getElementById('su-name').value.trim();
-    const e = document.getElementById('su-email').value.trim();
-    const p = document.getElementById('su-pass').value;
-    const p2 = document.getElementById('su-pass2').value;
-    if(!n||!e||!p){ alert('Please fill all fields'); return; }
-    if(p !== p2){ alert('Passwords do not match'); return; }
-    // Simulate signup
-    alert('Signed up (simulated). Now go to Login.');
-    window.location.href = 'login.html';
-  });
-</script>
+  <!-- Supabase UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+
+  <script>
+    // CONFIG - same as your project
+    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    const msg = document.getElementById('msg')
+    document.getElementById('btnSignup').addEventListener('click', async ()=>{
+      msg.textContent = ''
+      const name = document.getElementById('name').value.trim()
+      const email = document.getElementById('email').value.trim()
+      const pass = document.getElementById('pass').value
+      const pass2 = document.getElementById('pass2').value
+      if(!email || !pass){ msg.textContent = 'Enter email and password'; return }
+      if(pass !== pass2){ msg.textContent = 'Passwords do not match'; return }
+      try{
+        const { data, error } = await supabase.auth.signUp({ email, password: pass })
+        if(error) { msg.textContent = 'Error: '+error.message; return }
+        // redirect to login after sign up
+        msg.style.color = '#dff6f0'
+        msg.textContent = 'Signed up — open login to sign in'
+        setTimeout(()=> location.href = 'login.html', 900)
+      }catch(e){
+        msg.textContent = 'Error: '+ (e.message||e)
+      }
+    })
+  </script>
 </body>
 </html>
