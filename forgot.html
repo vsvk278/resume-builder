@@ -1,24 +1,57 @@
-<!-- After UMD + common.js -->
-<script src="common.js"></script>
-<script>
-  (function(){
-    const btn = document.getElementById('btn-send') || document.querySelector('[data-reset]');
-    if (!btn) return console.warn('Reset button not found');
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Resume Builder — Forgot password</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
+    .card{background:#0b1220;border:1px solid #172033;padding:16px;border-radius:8px;margin-bottom:12px}
+    input,button{display:block;width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #233040;background:#071226;color:#fff;box-sizing:border-box}
+    button{cursor:pointer;background:#0ea5a4;color:#012;border:0;padding:10px;font-weight:600}
+    small{color:#9aa7b2}
+    a{color:#7dd3fc}
+  </style>
+</head>
+<body>
+  <h1>Resume Builder — Forgot password</h1>
 
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const email = (document.getElementById('fg-email')||{}).value || (document.querySelector('[name="email"]')||{}).value;
-      if (!email) return alert('Enter email');
-      btn.disabled = true;
-      btn.innerText = 'Sending...';
+  <div class="card">
+    <h3>Reset password</h3>
+    <input id="fp-email" placeholder="Enter your account email" />
+    <button id="btn-reset">Send reset email</button>
+    <p id="msg"><small>Return to <a href="login.html">Log in</a></small></p>
+  </div>
 
-      const redirectTo = window.location.origin + '/login.html';
-      const { data, error } = await Common.resetPasswordForEmail(email, redirectTo);
-      btn.disabled = false;
-      btn.innerText = 'Send';
-      if (error) return alert('Reset error: ' + error.message);
-      alert('If that account exists, a reset email has been sent.');
-      window.location.href = 'login.html';
-    });
-  })();
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script>
+    // CONFIG - update if needed
+    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+    const { createClient } = supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    const msg = document.getElementById('msg')
+    document.getElementById('btn-reset').onclick = async () => {
+      msg.textContent = 'Sending reset email...'
+      const email = document.getElementById('fp-email').value
+      try {
+        // supabase-js V2 supports resetPasswordForEmail; if this errors, user will see the message.
+        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email)
+        if (error) msg.textContent = 'Error: ' + error.message
+        else msg.textContent = 'Reset email sent (check your inbox).'
+      } catch (err) {
+        // fallback: show helpful message
+        msg.textContent = 'Request sent. If you do not receive email, check your address or Supabase settings.'
+        console.error(err)
+      }
+    }
+
+    // If already logged in, go to home
+    (async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (user) window.location.href = 'home.html'
+    })()
+  </script>
+</body>
+</html>

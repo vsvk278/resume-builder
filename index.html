@@ -2,71 +2,51 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Resume Builder — Signup / Login</title>
+  <title>Resume Builder — Sign up</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; max-width:760px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
-    .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
-    input, button { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; box-sizing:border-box; }
-    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
-    small { color:#9aa7b2; }
+    body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
+    .card{background:#0b1220;border:1px solid #172033;padding:16px;border-radius:8px;margin-bottom:12px}
+    input,button{display:block;width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #233040;background:#071226;color:#fff;box-sizing:border-box}
+    button{cursor:pointer;background:#0ea5a4;color:#012;border:0;padding:10px;font-weight:600}
+    small{color:#9aa7b2}
+    a{color:#7dd3fc}
   </style>
 </head>
 <body>
-  <h1>Resume Builder — Signup / Login</h1>
+  <h1>Resume Builder — Sign up</h1>
 
   <div class="card">
-    <h3>Sign up</h3>
+    <h3>Create account</h3>
     <input id="su-email" placeholder="Email" />
     <input id="su-password" type="password" placeholder="Password (min 6 chars)" />
     <button id="btn-signup">Sign up</button>
-
-    <h3>Log in</h3>
-    <input id="li-email" placeholder="Email" />
-    <input id="li-password" type="password" placeholder="Password" />
-    <button id="btn-login">Log in</button>
-
-    <p id="auth-msg"><small>Use signup first, then login. After login you'll be redirected to the dashboard.</small></p>
+    <p id="msg"><small>Already have an account? <a href="login.html">Log in</a></small></p>
   </div>
 
-  <!-- supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
   <script>
-    // CONFIG - replace if needed
+    // CONFIG
     const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
     const { createClient } = supabase
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    const authMsg = document.getElementById('auth-msg')
-
-    // SIGNUP
+    const msg = document.getElementById('msg')
     document.getElementById('btn-signup').onclick = async () => {
-      authMsg.textContent = 'Signing up...'
+      msg.textContent = 'Signing up...'
       const email = document.getElementById('su-email').value
       const password = document.getElementById('su-password').value
       const { data, error } = await supabaseClient.auth.signUp({ email, password })
-      if (error) authMsg.textContent = 'Error: ' + error.message
-      else {
-        authMsg.textContent = 'Signup successful. Check email if confirmation required. You can sign in now.'
-      }
-    }
-
-    // LOGIN -> redirect to home.html on success
-    document.getElementById('btn-login').onclick = async () => {
-      authMsg.textContent = 'Logging in...'
-      const email = document.getElementById('li-email').value
-      const password = document.getElementById('li-password').value
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
       if (error) {
-        authMsg.textContent = 'Error: ' + error.message
+        msg.textContent = 'Error: ' + error.message
       } else {
-        // Successful login — redirect to dashboard
-        window.location.href = 'home.html'
+        msg.innerHTML = '<small>Signup successful. Redirecting to login in 3s...</small>'
+        setTimeout(()=> window.location.href = 'login.html', 3000)
       }
     }
 
-    // If user already logged in, redirect automatically
+    // Already logged in? Go to home
     (async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (user) window.location.href = 'home.html'
