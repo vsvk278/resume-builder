@@ -1,73 +1,65 @@
-<!-- login.html -->
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Resume Builder — Login</title>
+  <title>ResumeBuilder — Login</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
   <style>
-    html,body{height:100%;margin:0;font-family:Inter, Arial, Helvetica, sans-serif;background:linear-gradient(120deg,#083936,#1bcbb3);}
-    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{width:640px;max-width:94%;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border-radius:12px;box-shadow:0 30px 50px rgba(0,0,0,0.35);padding:36px;color:#fff;text-align:center}
-    h1{margin:0;font-size:44px;font-weight:800}
-    .sub{color:rgba(255,255,255,0.9);margin:10px 0 24px}
-    label{display:block;text-align:left;margin:10px 0 6px;color:rgba(255,255,255,0.9);font-size:12px}
-    input{width:100%;padding:14px 16px;border-radius:28px;border:none;background:#fff;color:#004; font-weight:600}
-    .row{display:flex;gap:12px;margin-top:18px;justify-content:center}
-    .btn{padding:12px 28px;border-radius:28px;border:0;cursor:pointer;font-weight:800}
-    .btn-primary{background:linear-gradient(180deg,#05c8d0,#0aa7b7);color:#002;box-shadow:0 10px 18px rgba(2,46,41,0.18)}
-    .btn-ghost{background:transparent;border:2px solid rgba(255,255,255,0.18);color:#fff}
-    .links{margin-top:18px}
-    .links a{color:#fff;text-decoration:underline;font-weight:700}
-    .status{height:20px;margin-top:8px}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap');
+    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;height:100vh;
+      background:linear-gradient(120deg,#0f544d,#13c7b3);display:flex;align-items:center;justify-content:center;padding:24px;color:#fff}
+
+    .card{width:min(680px,95%);background:rgba(255,255,255,0.03);padding:36px;border-radius:12px;box-shadow:0 30px 40px rgba(0,0,0,0.35);text-align:center}
+    h1{font-size:40px;margin:0 0 6px;font-weight:800}
+    p.lead{margin:0 0 20px;color:rgba(255,255,255,0.9);font-weight:600}
+    label{display:block;font-size:12px;margin:8px 0 6px;font-weight:600;color:#e6fff9}
+    input{width:100%;padding:14px 18px;border-radius:28px;border:none;background:#fff;color:#023;font-weight:700}
+    .row{display:flex;gap:12px;margin-top:18px;align-items:center;justify-content:center}
+    .btn{padding:12px 38px;border-radius:28px;border:none;background:linear-gradient(180deg,#02d3c4,#00b9a7);color:#012;font-weight:800;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,0.2)}
+    .btn.ghost{background:transparent;border:2px solid rgba(255,255,255,0.15);color:#fff}
+    a.small{display:block;margin-top:14px;color:#fff;text-decoration:underline}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Resume Builder</h1>
-      <div class="sub">Sign up or log in to save your profile and build tailored resumes</div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="common.js"></script>
 
-      <label>Email</label>
-      <input id="li-email" type="email" placeholder="you@domain.com" />
+  <div class="card" role="main">
+    <h1>Resume Builder</h1>
+    <p class="lead">Sign up or log in to save your profile and build tailored resumes</p>
 
-      <label>Password</label>
-      <input id="li-password" type="password" placeholder="Choose a password" />
+    <label for="li-email">Email</label>
+    <input id="li-email" type="email" placeholder="you@domain.com" />
 
-      <div class="row">
-        <button id="btn-login" class="btn btn-primary">Log in</button>
-        <button id="btn-signup" class="btn btn-ghost" onclick="location.href='signup.html'">Sign up</button>
-      </div>
+    <label for="li-password">Password</label>
+    <input id="li-password" type="password" placeholder="Choose a password" />
 
-      <div class="links">
-        <a href="forgot.html">Forgot password?</a> &nbsp; • &nbsp; <a href="home.html">Skip to home (dev only)</a>
-      </div>
-
-      <div id="status" class="status"></div>
+    <div class="row">
+      <button id="btn-login" class="btn">Log in</button>
+      <a href="index.html" class="btn ghost" style="text-decoration:none;line-height:1.6">Sign up</a>
     </div>
+
+    <a href="forgot.html" class="small">Forgot password?</a>
+
+    <p id="msg" style="margin-top:8px;color:#fff;font-weight:700"></p>
   </div>
 
-<script>
-  appCommon.initSupabase();
-  const supabase = appCommon.supabaseClientRef();
-
-  document.getElementById('btn-login').addEventListener('click', async () => {
-    const email = document.getElementById('li-email').value.trim();
-    const password = document.getElementById('li-password').value;
-    const statusEl = document.getElementById('status');
-    if(!email || !password){ appCommon.showStatus(statusEl, 'Email & password required', false); return }
-    appCommon.showStatus(statusEl, 'Logging in...')
-    try{
-      const { data, error } = await appCommon.supabaseClientRef().auth.signInWithPassword({ email, password })
-      if(error) { appCommon.showStatus(statusEl, 'Error: '+error.message, false); return }
-      appCommon.showStatus(statusEl, 'Logged in, redirecting...')
-      setTimeout(()=> window.location.href = 'home.html', 800)
-    }catch(e){
-      appCommon.showStatus(statusEl, 'Login failed', false)
-    }
-  })
-</script>
+  <script>
+    const msg = document.getElementById('msg');
+    document.getElementById('btn-login').onclick = async () => {
+      msg.textContent = 'Logging in...';
+      const email = document.getElementById('li-email').value.trim();
+      const password = document.getElementById('li-password').value;
+      if(!email || !password) { msg.textContent = 'Enter email & password'; return; }
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        msg.textContent = 'Error: ' + error.message;
+      } else {
+        msg.textContent = 'Logged in — redirecting...';
+        // redirect to home
+        setTimeout(()=> location.href = 'home.html', 500);
+      }
+    };
+  </script>
 </body>
 </html>

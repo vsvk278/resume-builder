@@ -1,55 +1,48 @@
-<!-- forgot.html -->
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Resume Builder — Forgot Password</title>
+  <title>ResumeBuilder — Forgot</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
   <style>
-    html,body{height:100%;margin:0;font-family:Inter, Arial, Helvetica, sans-serif;background:linear-gradient(120deg,#0b4b47,#12d0bd);color:#fff;}
-    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{width:900px;max-width:94%;background:linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.01));border-radius:10px;box-shadow:0 30px 60px rgba(0,0,0,0.4);padding:60px 40px;text-align:center}
-    h1{font-size:64px;margin:0;font-weight:900}
-    .sub{margin-top:12px;font-size:18px;color:rgba(255,255,255,0.9)}
-    label{margin-top:28px;display:block;font-weight:700;letter-spacing:1px}
-    input{width:80%;max-width:720px;padding:18px;border-radius:30px;border:none;background:#fff;color:#234;display:block;margin:14px auto;font-weight:700}
-    .btn{margin-top:18px;padding:16px 32px;border-radius:40px;border:0;background:linear-gradient(180deg,#13d6c3,#06b39f);font-weight:900;cursor:pointer;box-shadow:0 12px 22px rgba(2,46,41,0.18)}
-    .back{display:block;margin-top:22px;color:#fff;text-decoration:underline}
-    .status{height:20px;margin-top:12px}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap');
+    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;height:100vh;background:linear-gradient(120deg,#0f544d,#13c7b3);display:flex;align-items:center;justify-content:center;padding:24px;color:#fff}
+    .card{width:min(880px,95%);background:transparent;padding:40px;border-radius:8px;text-align:center}
+    h1{font-weight:900;font-size:64px;margin:0}
+    p.lead{margin:6px 0 22px;font-weight:600;color:#e9f9f5}
+    label{display:block;margin-top:8px;font-weight:700;letter-spacing:1px}
+    input{width:70%;max-width:820px;padding:16px;border-radius:36px;border:none;margin-top:10px;display:block;margin-left:auto;margin-right:auto;background:#fff;color:#023;font-weight:700}
+    .btn{margin-top:18px;padding:14px 36px;border-radius:36px;border:none;background:linear-gradient(180deg,#02d3c4,#00b9a7);color:#012;font-weight:900;cursor:pointer;box-shadow:0 14px 22px rgba(0,0,0,0.25)}
+    a.link{display:block;margin-top:18px;color:#fff;text-decoration:underline;font-weight:800}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Forgot Password</h1>
-      <div class="sub">New Password</div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="common.js"></script>
 
-      <label>EMAIL</label>
-      <input id="f-email" type="email" placeholder="YOUR EMAIL ADDRESS" />
+  <div class="card">
+    <h1>Forgot Password</h1>
+    <p class="lead">New Password</p>
 
-      <button id="btn-send" class="btn">SEND</button>
+    <label for="fg-email">EMAIL</label>
+    <input id="fg-email" type="email" placeholder="YOUR EMAIL ADDRESS" />
 
-      <a class="back" href="login.html">Back to Login</a>
+    <button id="btn-send" class="btn">SEND</button>
 
-      <div id="status" class="status"></div>
-    </div>
+    <a class="link" href="login.html">Back to Login</a>
+    <p id="msg" style="margin-top:12px;color:#fff;font-weight:700"></p>
   </div>
 
-<script>
-  appCommon.initSupabase();
-  document.getElementById('btn-send').addEventListener('click', async () => {
-    const email = document.getElementById('f-email').value.trim();
-    const statusEl = document.getElementById('status');
-    if(!email){ appCommon.showStatus(statusEl, 'Enter your email', false); return }
-    appCommon.showStatus(statusEl, 'Sending reset email...')
-    try{
-      const { data, error } = await appCommon.supabaseClientRef().auth.resetPasswordForEmail(email)
-      if(error) { appCommon.showStatus(statusEl, 'Error: '+error.message, false); return }
-      appCommon.showStatus(statusEl, 'Check your email for reset link')
-    }catch(e){ appCommon.showStatus(statusEl, 'Request failed', false) }
-  })
-</script>
+  <script>
+    document.getElementById('btn-send').onclick = async () => {
+      const email = document.getElementById('fg-email').value.trim();
+      const msg = document.getElementById('msg');
+      if(!email){ msg.textContent = 'Enter your email'; return; }
+      msg.textContent = 'Sending reset email...';
+      const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html' });
+      if (error) msg.textContent = 'Error: ' + error.message;
+      else msg.textContent = 'If that email exists, a reset link was sent. Check inbox.';
+    };
+  </script>
 </body>
 </html>

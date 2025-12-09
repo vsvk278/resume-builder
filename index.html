@@ -1,108 +1,129 @@
-<!-- signup.html -->
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Resume Builder — Signup</title>
+  <title>ResumeBuilder — Sign up</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap');
     :root{
-      --grad-a:#0f3b38;
-      --grad-b:#12c6b0;
-      --card:#0f3734;
-      --muted:rgba(255,255,255,0.85);
+      --bg1:#0f544d; --bg2:#13c7b3;
+      --card:#0e6E63; --muted:#cfe8e2;
     }
-    html,body{height:100%;margin:0;font-family:Inter, Arial, Helvetica, sans-serif;background:linear-gradient(120deg,var(--grad-a),var(--grad-b));}
-    .center-wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px}
-    .card{width:900px;max-width:94%;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border-radius:12px;box-shadow:0 30px 50px rgba(0,0,0,0.35);padding:36px;display:flex;gap:28px;color:#fff}
-    .left{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:18px}
-    .logo{display:flex;gap:12px;align-items:center}
-    .logo .badge{width:34px;height:34px;border-radius:8px;background:linear-gradient(180deg,#18d6bd,#0fb79a)}
-    h1{font-size:40px;margin:0 0 6px 0; font-weight:800}
-    .subtitle{color:rgba(255,255,255,0.85);font-size:14px;margin-bottom:6px}
-    .illustration{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));border-radius:8px;min-height:220px;display:flex;align-items:center;justify-content:center}
-    .illustration .box{width:60%;height:60%;background:rgba(255,255,255,0.85);border-radius:6px;opacity:0.95}
-    .right{width:420px;min-width:280px}
-    label{font-size:12px;display:block;margin:10px 0 6px;color:rgba(255,255,255,0.85);letter-spacing:0.6px}
-    input[type="text"], input[type="email"], input[type="password"]{
-      width:100%;padding:12px 16px;border-radius:28px;border:none;background:rgba(255,255,255,0.95);color:#063; font-weight:600;box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,system-ui,Arial,sans-serif;
+      background:linear-gradient(120deg,var(--bg1),var(--bg2));
+      color:#fff;display:flex;align-items:center;justify-content:center;
+      padding:40px;
     }
+
+    .card{
+      width:min(980px,94%); background:rgba(255,255,255,0.03);
+      border-radius:12px; padding:36px; box-shadow: 0 30px 40px rgba(0,0,0,0.35);
+      display:flex; gap:32px; align-items:flex-start;
+      backdrop-filter: blur(6px);
+    }
+
+    /* left illustration block (decorative) */
+    .left{
+      flex:1; min-height:300px; border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      display:flex;align-items:center;justify-content:center;
+    }
+    .illu{
+      width:60%;height:160px;border-radius:8px;background:rgba(255,255,255,0.06);
+    }
+
+    /* right form */
+    .right{flex:1.05}
+    h1{margin:0 0 6px 0;font-size:34px;font-weight:800}
+    p.lead{margin:0 0 18px 0;color:rgba(255,255,255,0.8);font-weight:600}
+
+    label{display:block;font-size:12px;margin:12px 0 6px;color:#e6fff9;font-weight:600}
+    input[type=text], input[type=email], input[type=password]{
+      width:100%; padding:14px 16px; border-radius:28px; border:none;
+      background:rgba(255,255,255,0.95); color:#023; font-weight:600;
+      box-shadow: inset 0 2px 0 rgba(0,0,0,0.03);
+    }
+
     .btn{
-      display:inline-block;margin-top:18px;padding:14px 28px;border-radius:10px;background:linear-gradient(180deg,#15d1b9,#06b89c);color:#012;font-weight:800;cursor:pointer;border:0;box-shadow:0 10px 18px rgba(2,46,41,0.2)
+      display:inline-block;margin-top:18px;padding:14px 36px;border-radius:28px;border:none;
+      background:linear-gradient(180deg,#06d3c8,#00b9a7); color:#012;font-weight:800;
+      cursor:pointer; box-shadow: 0 12px 20px rgba(0,0,0,0.25);
     }
-    .link-row{margin-top:12px;font-size:14px}
-    .link-row a{color:#fff;font-weight:700;text-decoration:underline}
-    .status{height:20px;margin-top:8px}
-    @media(max-width:880px){ .card{flex-direction:column} .right{width:100%} }
+
+    .secondary{background:transparent;color:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.06);box-shadow:none;padding:10px 20px;border-radius:20px}
+    .muted-link{display:block;margin-top:14px;color:rgba(255,255,255,0.9);text-decoration:underline; font-weight:700}
+
+    /* small responsive */
+    @media (max-width:880px){
+      .card{flex-direction:column}
+      .left{order:2}
+      .right{order:1}
+    }
   </style>
 </head>
 <body>
-  <div class="center-wrap">
-    <div class="card">
-      <div class="left">
-        <div class="logo">
-          <div class="badge"></div>
-          <div style="font-weight:700">ResumeLab</div>
-        </div>
-        <h1>Create a New Account</h1>
-        <div class="subtitle">Join ResumeLab — save profiles, generate tailored resumes with AI.</div>
-        <div class="illustration">
-          <div class="box"></div>
-        </div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.75);margin-top:8px">By signing up you agree to our <u>Terms</u>.</div>
-      </div>
+  <!-- UMD Supabase + common.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="common.js"></script>
 
-      <div class="right">
-        <label>Full name</label>
-        <input id="su-name" type="text" placeholder="Your full name" />
+  <div class="card" role="main">
+    <div class="left" aria-hidden="true">
+      <div class="illu"></div>
+    </div>
 
-        <label>Email</label>
-        <input id="su-email" type="email" placeholder="you@domain.com" />
+    <div class="right">
+      <h1>Create a New Account</h1>
+      <p class="lead">Join ResumeBuilder — save profiles, generate tailored resumes with AI.</p>
 
-        <label>Password</label>
-        <input id="su-pass" type="password" placeholder="Choose a password" />
+      <label for="su-full">Full name</label>
+      <input id="su-full" type="text" placeholder="Your full name" />
 
-        <label>Confirm password</label>
-        <input id="su-pass2" type="password" placeholder="Confirm password" />
+      <label for="su-email">Email address</label>
+      <input id="su-email" type="email" placeholder="you@domain.com" />
 
+      <label for="su-password">Password</label>
+      <input id="su-password" type="password" placeholder="Choose a password" />
+
+      <label for="su-password2">Confirm password</label>
+      <input id="su-password2" type="password" placeholder="Repeat password" />
+
+      <div style="margin-top:18px;display:flex;gap:12px;align-items:center">
         <button id="btn-signup" class="btn">Sign Up</button>
-
-        <div class="link-row">Already have an account? <a href="login.html">Log in</a></div>
-        <div id="status" class="status"></div>
       </div>
+
+      <a class="muted-link" href="login.html">Already have an account? Log in</a>
+
+      <p id="msg" style="margin-top:10px;color:#fff;font-weight:600"></p>
     </div>
   </div>
 
-<script>
-  appCommon.initSupabase();
-  const supabase = appCommon.supabaseClientRef();
+  <script>
+    const msgEl = document.getElementById('msg');
+    document.getElementById('btn-signup').onclick = async () => {
+      msgEl.textContent = 'Signing up...';
+      const email = document.getElementById('su-email').value.trim();
+      const password = document.getElementById('su-password').value;
+      const full = document.getElementById('su-full').value.trim();
 
-  document.getElementById('btn-signup').addEventListener('click', async () => {
-    const name = document.getElementById('su-name').value.trim()
-    const email = document.getElementById('su-email').value.trim()
-    const pass = document.getElementById('su-pass').value
-    const pass2 = document.getElementById('su-pass2').value
-    const statusEl = document.getElementById('status')
-    if(!email || !pass){ appCommon.showStatus(statusEl, 'Email & password required', false); return }
-    if(pass.length < 6){ appCommon.showStatus(statusEl, 'Password must be >= 6 chars', false); return }
-    if(pass !== pass2){ appCommon.showStatus(statusEl, 'Passwords do not match', false); return }
-    appCommon.showStatus(statusEl, 'Signing up...')
-    try{
-      const { data, error } = await appCommon.supabaseClientRef().auth.signUp({ email, password: pass })
-      if(error) { appCommon.showStatus(statusEl, 'Error: '+error.message, false); return }
-      // create a minimal profile row (optional) - it's okay if table doesn't exist
-      try{
-        await appCommon.supabaseClientRef().from('profiles').upsert({ id: data.user?.id, full_name: name, phone: null, location: null, linkedin: null, github: null }, { returning: 'minimal' })
-      }catch(e){}
-      appCommon.showStatus(statusEl, 'Signup succeeded — check email for confirmation (if required).')
-      // optionally redirect to login
-      setTimeout(()=> window.location.href = 'login.html', 1400)
-    }catch(e){
-      appCommon.showStatus(statusEl, 'Error signing up', false)
-    }
-  })
-</script>
+      if (!email || !password || password.length < 6) {
+        msgEl.textContent = 'Enter valid email & password (min 6 chars).';
+        return;
+      }
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        msgEl.textContent = 'Error: ' + error.message;
+      } else {
+        // create empty profile row with display name (optional)
+        if (data?.user?.id) {
+          await supabaseClient.from('profiles').upsert({ id: data.user.id, full_name: full || null }, { returning: 'minimal' });
+        }
+        msgEl.textContent = 'Signup ok — check your email if confirmation needed. You can login now.';
+      }
+    };
+  </script>
 </body>
 </html>
