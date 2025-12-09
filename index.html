@@ -1,76 +1,181 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Resume Builder — Signup / Login</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body { font-family: Arial, Helvetica, sans-serif; max-width:760px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
-    .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
-    input, button { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; box-sizing:border-box; }
-    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
-    small { color:#9aa7b2; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ResumeBuilder – Login / Signup</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #c8ffe0, #d7e3ff);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .container {
+        width: 900px;
+        background: white;
+        display: flex;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+
+    .left {
+        flex: 1;
+        background: linear-gradient(135deg, #a2f5c1, #c9e4ff);
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    .right {
+        flex: 1;
+        padding: 40px;
+        background: #f9faff;
+    }
+
+    h2 {
+        margin-bottom: 10px;
+        color: #1a1a1a;
+        font-size: 26px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 30px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0 15px 0;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: #eef2f7;
+        font-size: 14px;
+        outline: none;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #00c47a;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #00a868;
+    }
+
+    .switch-text {
+        margin-top: 15px;
+        text-align: center;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .link {
+        color: #0077ff;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* Hide login form initially */
+    #loginSection {
+        display: none;
+    }
+</style>
+
 </head>
 <body>
-  <h1>Resume Builder — Signup / Login</h1>
 
-  <div class="card">
-    <h3>Sign up</h3>
-    <input id="su-email" placeholder="Email" />
-    <input id="su-password" type="password" placeholder="Password (min 6 chars)" />
-    <button id="btn-signup">Sign up</button>
+<div class="container">
 
-    <h3>Log in</h3>
-    <input id="li-email" placeholder="Email" />
-    <input id="li-password" type="password" placeholder="Password" />
-    <button id="btn-login">Log in</button>
+    <!-- LEFT IMAGE PANEL -->
+    <div class="left">
+        <img src="https://illustrations.popsy.co/gray/man-sitting-at-desk.svg" width="280">
+    </div>
 
-    <p id="auth-msg"><small>Use signup first, then login. After login you'll be redirected to the dashboard.</small></p>
-  </div>
+    <!-- RIGHT PANEL -->
+    <div class="right">
 
-  <!-- supabase UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script>
-    // CONFIG - replace if needed
-    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
-    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
-    const { createClient } = supabase
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        <!-- SIGNUP FORM ------------------------------- -->
+        <div id="signupSection">
+            <h2>Create an Account</h2>
+            <p class="subtitle">Join ResumeBuilder to save profiles & generate tailored resumes.</p>
 
-    const authMsg = document.getElementById('auth-msg')
+            <input type="text" id="su-fullname" placeholder="Full Name" />
+            <input type="email" id="su-email" placeholder="Email Address" />
+            <input type="password" id="su-password" placeholder="Password" />
+            <input type="password" id="su-confirm" placeholder="Confirm Password" />
 
-    // SIGNUP
-    document.getElementById('btn-signup').onclick = async () => {
-      authMsg.textContent = 'Signing up...'
-      const email = document.getElementById('su-email').value
-      const password = document.getElementById('su-password').value
-      const { data, error } = await supabaseClient.auth.signUp({ email, password })
-      if (error) authMsg.textContent = 'Error: ' + error.message
-      else {
-        authMsg.textContent = 'Signup successful. Check email if confirmation required. You can sign in now.'
-      }
-    }
+            <button id="btnSignup">Sign Up</button>
 
-    // LOGIN -> redirect to home.html on success
-    document.getElementById('btn-login').onclick = async () => {
-      authMsg.textContent = 'Logging in...'
-      const email = document.getElementById('li-email').value
-      const password = document.getElementById('li-password').value
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
-      if (error) {
-        authMsg.textContent = 'Error: ' + error.message
-      } else {
-        // Successful login — redirect to dashboard
-        window.location.href = 'home.html'
-      }
-    }
+            <p class="switch-text">
+                Already have an account?
+                <span class="link" id="gotoLogin">Log in</span>
+            </p>
+        </div>
 
-    // If user already logged in, redirect automatically
-    (async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (user) window.location.href = 'home.html'
-    })()
-  </script>
+        <!-- LOGIN FORM -------------------------------- -->
+        <div id="loginSection">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Log in to your ResumeBuilder account</p>
+
+            <input type="email" id="li-email" placeholder="Email Address" />
+            <input type="password" id="li-password" placeholder="Password" />
+
+            <button id="btnLogin">Log In</button>
+
+            <p class="switch-text">
+                Don't have an account?
+                <span class="link" id="gotoSignup">Create one</span>
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const signupSection = document.getElementById("signupSection");
+    const loginSection = document.getElementById("loginSection");
+
+    const gotoLogin = document.getElementById("gotoLogin");
+    const gotoSignup = document.getElementById("gotoSignup");
+
+    // Switch to login
+    gotoLogin.addEventListener("click", () => {
+        signupSection.style.display = "none";
+        loginSection.style.display = "block";
+
+        // Autofill email from signup field
+        document.getElementById("li-email").value =
+            document.getElementById("su-email").value;
+
+        document.getElementById("li-email").focus();
+    });
+
+    // Switch to signup
+    gotoSignup.addEventListener("click", () => {
+        loginSection.style.display = "none";
+        signupSection.style.display = "block";
+        document.getElementById("su-fullname").focus();
+    });
+</script>
+
 </body>
 </html>
