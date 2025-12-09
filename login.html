@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ResumeBuilder — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg1:#0f3f3f; --bg2:#2fe0d0; --pill-bg:#ffffff; --pill-text:#1b2f2f; }
+  html,body{height:100%;margin:0;font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+  body{
+    background: linear-gradient(135deg,#09333a 0%, #16cfc0 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .wrap{ width:760px; max-width:94vw; padding:60px 40px; box-sizing:border-box; text-align:center; }
+  h1{ margin:0 0 10px; font-size:44px; color:#fff; font-weight:800; }
+  .subtitle{ color:rgba(255,255,255,0.9); margin-bottom:26px; font-weight:600; }
+  .form{ max-width:520px; margin:0 auto; display:flex;flex-direction:column; gap:18px; align-items:center;}
+  label.small{ width:100%; text-align:left; font-size:12px; letter-spacing:1px; color:rgba(255,255,255,0.95); font-weight:700; margin-left:6px; }
+  input{ width:100%; padding:18px 28px; border-radius:30px; border:0; background:var(--pill-bg); color:var(--pill-text); font-weight:700; letter-spacing:1px; text-transform:uppercase; box-shadow: 0 10px 30px rgba(2,20,20,0.08); font-size:14px; box-sizing:border-box; }
+  input::placeholder{ color:#446b69; opacity:0.9; font-weight:700; }
+  .btn{ margin-top:8px; padding:14px 34px; border-radius:30px; border:0; background:linear-gradient(180deg,#1bd0c1,#06b6d4); color:#012; font-weight:800; letter-spacing:2px; cursor:pointer; box-shadow: 0 14px 36px rgba(4,70,64,0.12); }
+  .controls{ display:flex; gap:18px; justify-content:center; margin-top:16px;}
+  .link{ color:rgba(255,255,255,0.95); text-decoration:underline; cursor:pointer; font-weight:700; }
+  @media (max-width:640px){ h1{ font-size:32px; } .wrap{ padding:40px 20px; } }
+</style>
+</head>
+<body>
+  <div class="wrap" role="main" aria-label="Login panel">
+    <h1>Login</h1>
+    <div class="subtitle">Sign in to continue</div>
+
+    <form class="form" onsubmit="return false;" aria-label="Login form">
+      <div style="width:100%"><label class="small">EMAIL</label><input id="li-email" type="email" placeholder="Your email address" required></div>
+      <div style="width:100%"><label class="small">PASSWORD</label><input id="li-pass" type="password" placeholder="Enter password" required></div>
+
+      <button id="btn-login" class="btn">LOGIN</button>
+
+      <div class="controls">
+        <a class="link" href="index.html">Create account</a>
+        <a class="link" href="forgot.html">Forgot password?</a>
+      </div>
+    </form>
+  </div>
+
+<script>
+  // Placeholder: replace with Supabase signIn call
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const e = document.getElementById('li-email').value.trim();
+    const p = document.getElementById('li-pass').value;
+    if(!e||!p){ alert('Enter email and password'); return; }
+    // simulate login success
+    alert('Logged in (simulated). You can now be redirected to home.html.');
+    // window.location.href = 'home.html';   // enable when home exists
+  });
+</script>
+</body>
+</html>
