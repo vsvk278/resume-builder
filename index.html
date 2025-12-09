@@ -1,42 +1,76 @@
-<!-- Ensure this is after: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script> -->
-<script src="common.js"></script>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Resume Builder — Signup / Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; max-width:760px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
+    .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
+    input, button { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; box-sizing:border-box; }
+    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
+    small { color:#9aa7b2; }
+  </style>
+</head>
+<body>
+  <h1>Resume Builder — Signup / Login</h1>
 
-<script>
-  // Signup form wiring (assumes input IDs: su-email, su-password, su-fullname optional)
-  (function(){
-    const btn = document.getElementById('btn-signup') || document.getElementById('signup-submit');
-    if (!btn) return console.warn('Signup button not found, skip signup wiring');
+  <div class="card">
+    <h3>Sign up</h3>
+    <input id="su-email" placeholder="Email" />
+    <input id="su-password" type="password" placeholder="Password (min 6 chars)" />
+    <button id="btn-signup">Sign up</button>
 
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const email = (document.getElementById('su-email') || {}).value || (document.querySelector('[name="email"]')||{}).value;
-      const password = (document.getElementById('su-password') || {}).value || (document.querySelector('[name="password"]')||{}).value;
-      const full = (document.getElementById('su-fullname') || {}).value || (document.getElementById('su-name')||{}).value || null;
+    <h3>Log in</h3>
+    <input id="li-email" placeholder="Email" />
+    <input id="li-password" type="password" placeholder="Password" />
+    <button id="btn-login">Log in</button>
 
-      if (!email || !password) return alert('Enter email & password');
-      btn.disabled = true;
-      btn.innerText = 'Signing up...';
+    <p id="auth-msg"><small>Use signup first, then login. After login you'll be redirected to the dashboard.</small></p>
+  </div>
 
-      const { data, error } = await Common.signUp(email, password);
+  <!-- supabase UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script>
+    // CONFIG - replace if needed
+    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+    const { createClient } = supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    const authMsg = document.getElementById('auth-msg')
+
+    // SIGNUP
+    document.getElementById('btn-signup').onclick = async () => {
+      authMsg.textContent = 'Signing up...'
+      const email = document.getElementById('su-email').value
+      const password = document.getElementById('su-password').value
+      const { data, error } = await supabaseClient.auth.signUp({ email, password })
+      if (error) authMsg.textContent = 'Error: ' + error.message
+      else {
+        authMsg.textContent = 'Signup successful. Check email if confirmation required. You can sign in now.'
+      }
+    }
+
+    // LOGIN -> redirect to home.html on success
+    document.getElementById('btn-login').onclick = async () => {
+      authMsg.textContent = 'Logging in...'
+      const email = document.getElementById('li-email').value
+      const password = document.getElementById('li-password').value
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
       if (error) {
-        btn.disabled = false;
-        btn.innerText = 'Sign up';
-        return alert('Signup error: ' + error.message);
+        authMsg.textContent = 'Error: ' + error.message
+      } else {
+        // Successful login — redirect to dashboard
+        window.location.href = 'home.html'
       }
+    }
 
-      // try to sign in automatically (if allowed)
-      try {
-        await Common.signIn(email, password);
-      } catch (e) { /* ignore */ }
-
-      // upsert a minimal profile row (id = user.id). We wait for getUser to be available.
-      const user = await Common.getUser();
-      if (user && full) {
-        await Common.upsertProfile({ id: user.id, full_name: full });
-      }
-
-      // redirect to home
-      window.location.href = 'home.html';
-    });
-  })();
-</script>
+    // If user already logged in, redirect automatically
+    (async () => {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (user) window.location.href = 'home.html'
+    })()
+  </script>
+</body>
+</html>
