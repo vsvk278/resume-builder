@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Resume Builder — Sign up</title>
+  <title>Resume Builder — Sign Up</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
@@ -14,14 +14,22 @@
   </style>
 </head>
 <body>
-  <h1>Resume Builder — Sign up</h1>
+  <h1>Resume Builder — Sign Up</h1>
 
   <div class="card">
     <h3>Create account</h3>
+
+    <input id="su-name" placeholder="Full Name" />
+
     <input id="su-email" placeholder="Email" />
+
     <input id="su-password" type="password" placeholder="Password (min 6 chars)" />
-    <button id="btn-signup">Sign up</button>
-    <p id="msg"><small>Already have an account? <a href="login.html">Log in</a></small></p>
+
+    <input id="su-confirm" type="password" placeholder="Confirm Password" />
+
+    <button id="btn-signup">Sign Up</button>
+
+    <p id="msg"><small>Already have an account? <a href="login.html">Login</a></small></p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
@@ -33,20 +41,39 @@
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     const msg = document.getElementById('msg')
+
     document.getElementById('btn-signup').onclick = async () => {
-      msg.textContent = 'Signing up...'
-      const email = document.getElementById('su-email').value
+      msg.textContent = 'Processing...'
+
+      const name = document.getElementById('su-name').value.trim()
+      const email = document.getElementById('su-email').value.trim()
       const password = document.getElementById('su-password').value
-      const { data, error } = await supabaseClient.auth.signUp({ email, password })
+      const confirm = document.getElementById('su-confirm').value
+
+      // Basic validation
+      if (!name) return msg.textContent = 'Full name is required.'
+      if (!email) return msg.textContent = 'Email is required.'
+      if (!password) return msg.textContent = 'Password is required.'
+      if (password !== confirm) return msg.textContent = 'Passwords do not match.'
+
+      // Create user
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name }
+        }
+      })
+
       if (error) {
         msg.textContent = 'Error: ' + error.message
       } else {
         msg.innerHTML = '<small>Signup successful. Redirecting to login in 3s...</small>'
-        setTimeout(()=> window.location.href = 'login.html', 3000)
+        setTimeout(() => window.location.href = 'login.html', 3000)
       }
     }
 
-    // Already logged in? Go to home
+    // If already logged in → redirect to dashboard
     (async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (user) window.location.href = 'home.html'
