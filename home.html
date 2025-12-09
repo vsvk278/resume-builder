@@ -1,307 +1,533 @@
-<!-- home.html -->
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Resume Builder — Home</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resume Builder — Home</title>
+
+  <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
+
   <style>
-    html,body{height:100%;margin:0;font-family:Inter, Arial, Helvetica, sans-serif;background:linear-gradient(120deg,#0b4b47,#13d9be);color:#fff}
-    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{width:1100px;max-width:96%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 30px 50px rgba(0,0,0,0.35);padding:28px;color:#fff;display:flex;gap:28px}
-    .left{flex:0 0 420px}
-    .right{flex:1;padding:6px 12px}
-    .header{display:flex;justify-content:space-between;align-items:flex-start}
-    .profile-badge{background:linear-gradient(180deg,#12d6bd,#0fb69a);width:36px;height:36px;border-radius:8px;margin-right:12px}
-    h2{margin:0 0 6px 0;font-size:20px;font-weight:800}
-    .muted{color:rgba(255,255,255,0.9);font-size:13px;margin-bottom:8px}
-    .illustr{background:rgba(255,255,255,0.06);border-radius:8px;min-height:220px;display:flex;align-items:center;justify-content:center}
-    .illustr .card-box{width:60%;height:60%;background:rgba(255,255,255,0.95);border-radius:6px;opacity:0.95}
-    label{display:block;font-size:13px;color:rgba(255,255,255,0.95);margin-top:12px}
-    .two{display:flex;gap:12px}
-    .two input{flex:1}
-    input,textarea{width:100%;padding:12px;border-radius:8px;border:none;background:rgba(255,255,255,0.95);color:#043;font-weight:600}
-    textarea{min-height:60px;border-radius:6px}
-    .btn{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-weight:700}
-    .btn-edit{background:rgba(255,255,255,0.08);color:#fff}
-    .btn-logout{background:#ef4444;color:#fff}
-    .btn-submit{background:linear-gradient(180deg,#14d6c0,#06b69f);color:#012;padding:12px 18px;border-radius:20px}
-    .small-muted{font-size:13px;color:rgba(255,255,255,0.85)}
-    .section-title{font-weight:800;margin-top:18px}
-    .right .section{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:14px;border-radius:10px;margin-bottom:14px}
+    :root{
+      --bg-1:#0e4e49;
+      --bg-2:#11b8b0;
+      --card:#0f3e3a;
+      --card-2:#0b3632;
+      --muted:#b8d8d6;
+      --accent:#07c6b8;
+      --white:#ffffff;
+      --shadow: 0 18px 36px rgba(3,27,26,0.35), inset 0 1px 0 rgba(255,255,255,0.02);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{height:100%;margin:0}
+    body{
+      min-height:100%;
+      background: linear-gradient(135deg,var(--bg-1) 0%, rgba(7,198,184,0.25) 100%);
+      color:var(--white);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .container{
+      max-width:1200px;
+      margin:40px auto;
+      padding:28px;
+    }
+
+    .card{
+      display:flex;
+      gap:32px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border-radius:12px;
+      padding:34px;
+      box-shadow: var(--shadow);
+      border:1px solid rgba(255,255,255,0.03);
+      align-items:flex-start;
+    }
+
+    /* Left illustration block */
+    .left {
+      width:40%;
+      min-height:360px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+      padding:28px;
+    }
+    .illus {
+      width:76%;
+      height:220px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
+      border-radius:8px;
+      box-shadow: 0 8px 20px rgba(3,27,26,0.18);
+    }
+
+    /* Right form */
+    .right { width:60%; }
+    .title-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:18px;
+    }
+    h1{font-size:20px;margin:0 0 6px 0}
+    .subtext{color:var(--muted);font-size:13px;margin:4px 0 18px 0}
+
+    .buttons {
+      display:flex;
+      gap:10px;
+    }
+    .btn {
+      padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600;
+    }
+    .btn-edit { background: rgba(255,255,255,0.07); color:var(--white); }
+    .btn-logout { background: #ef5b5b; color:#fff; box-shadow: 0 6px 14px rgba(239,91,91,0.24); }
+
+    /* Form styles */
+    form { width:100%; }
+    .section {
+      margin-bottom:20px;
+      padding-bottom:18px;
+      border-bottom:1px solid rgba(255,255,255,0.03);
+    }
+    .section h2 {
+      font-size:18px;margin:0 0 12px 0;
+      font-weight:700;
+    }
+    .grid-2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:8px; font-weight:600; text-transform:capitalize; }
+    input[type="text"], input[type="email"], input[type="tel"], textarea {
+      width:100%;
+      padding:12px 14px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.03);
+      color:var(--white);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.01);
+      font-size:14px;
+    }
+    textarea { min-height:80px; resize:vertical; }
+
+    .add-btn {
+      float:right;
+      background: rgba(255,255,255,0.04);
+      color:var(--white);
+      border-radius:8px;
+      padding:8px 12px;
+      border:1px solid rgba(255,255,255,0.03);
+      cursor:pointer;
+      font-weight:700;
+      box-shadow: 0 6px 12px rgba(3,27,26,0.2);
+    }
+
+    .entry{
+      background: rgba(255,255,255,0.02);
+      padding:12px;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.02);
+    }
+
+    .submit-row { display:flex; justify-content:flex-end; margin-top:18px; }
+    .submit-btn {
+      background: linear-gradient(180deg,var(--accent), #08c6bd);
+      padding:12px 20px;border-radius:20px;border:0;color:#003; font-weight:800;
+      box-shadow: 0 12px 28px rgba(3,27,26,0.34);
+      cursor:pointer;
+    }
+
+    .muted-note { color: rgba(255,255,255,0.65); font-size:13px; margin-top:12px; }
+
+    /* responsive */
+    @media (max-width:900px){
+      .card{flex-direction:column}
+      .left, .right{width:100%}
+      .grid-2{grid-template-columns:1fr}
+      .submit-row{justify-content:center}
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="container">
     <div class="card">
       <div class="left">
-        <div style="display:flex;align-items:center">
-          <div class="profile-badge"></div>
-          <div>
-            <div style="font-weight:800">Resume Builder — Home</div>
-            <div id="login-status" class="muted">Not logged in</div>
-          </div>
-        </div>
-
-        <div class="illustr" style="margin-top:18px">
-          <div class="card-box"></div>
-        </div>
-
-        <div style="margin-top:12px" id="notes">
-          <div class="small-muted">Notes: This is your home page. If you haven't saved your resume profile, fill the form and click Submit. If you already saved details you'll see them prefilled and can click Edit profile to update.</div>
-        </div>
+        <div class="illus" aria-hidden="true"></div>
       </div>
 
       <div class="right">
-        <div class="header">
+        <div class="title-row">
           <div>
-            <h2>Profile</h2>
-            <div id="profile-email" class="muted">Logged in as —</div>
+            <h1>Resume Builder — Home</h1>
+            <div class="subtext" id="logged-as">Not logged in</div>
           </div>
-          <div style="display:flex;gap:10px">
-            <button id="btn-edit-toggle" class="btn btn-edit">Edit profile</button>
-            <button id="btn-logout" class="btn btn-logout">Logout</button>
-          </div>
-        </div>
-
-        <div id="form-area">
-          <!-- Contact section -->
-          <div class="section">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:800;font-size:18px">1 — Contact information</div>
-            </div>
-
-            <div style="margin-top:8px" class="two">
-              <div>
-                <label>Full name *</label>
-                <input id="full_name" placeholder="John Doe" />
-              </div>
-              <div>
-                <label>Email *</label>
-                <input id="email" placeholder="email@example.com" />
-              </div>
-            </div>
-
-            <div style="margin-top:8px" class="two">
-              <div>
-                <label>Phone</label>
-                <input id="phone" placeholder="+1 (555) 123-4567" />
-              </div>
-              <div>
-                <label>Location</label>
-                <input id="location" placeholder="City, Country" />
-              </div>
-            </div>
-
-            <label style="margin-top:10px">LinkedIn (optional)</label>
-            <input id="linkedin" placeholder="https://linkedin.com/..." />
-          </div>
-
-          <!-- Work Experience -->
-          <div class="section">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:800;font-size:18px">2 — Work Experience</div>
-              <div><button id="btn-add-work" class="btn btn-edit">+ Add Work</button></div>
-            </div>
-            <div id="work-list" style="margin-top:12px"></div>
-          </div>
-
-          <!-- Education -->
-          <div class="section">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:800;font-size:18px">3 — Education</div>
-              <div><button id="btn-add-edu" class="btn btn-edit">+ Add Education</button></div>
-            </div>
-            <div id="edu-list" style="margin-top:12px"></div>
-          </div>
-
-          <!-- Certifications -->
-          <div class="section">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:800;font-size:18px">4 — Certifications</div>
-              <div><button id="btn-add-cert" class="btn btn-edit">+ Add Cert</button></div>
-            </div>
-            <div id="cert-list" style="margin-top:12px"></div>
-          </div>
-
-          <div style="display:flex;justify-content:flex-end;margin-top:10px">
-            <button id="btn-submit" class="btn btn-submit">Submit</button>
+          <div class="buttons">
+            <button class="btn btn-edit" id="btn-edit-profile">Edit profile</button>
+            <button class="btn btn-logout" id="btn-logout">Logout</button>
           </div>
         </div>
+
+        <!-- Multi-section resume form -->
+        <form id="resume-form">
+          <!-- 1 Contact info -->
+          <section class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h2>1 — Contact information</h2>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label for="full_name">Full name *</label>
+                <input id="full_name" type="text" placeholder="John Doe" required />
+              </div>
+              <div>
+                <label for="email">Email *</label>
+                <input id="email" type="email" placeholder="you@domain.com" required />
+              </div>
+
+              <div>
+                <label for="phone">Phone</label>
+                <input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
+              </div>
+              <div>
+                <label for="location">Location</label>
+                <input id="location" type="text" placeholder="City, Country" />
+              </div>
+
+              <div style="grid-column:1 / -1">
+                <label for="linkedin">LinkedIn (optional)</label>
+                <input id="linkedin" type="text" placeholder="https://linkedin.com/..." />
+              </div>
+            </div>
+          </section>
+
+          <!-- 2 Work Experience -->
+          <section class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h2>2 — Work Experience</h2>
+              <button type="button" class="add-btn" id="add-work">+ Add Work</button>
+            </div>
+            <div id="work-list" aria-live="polite">
+              <!-- work entries go here -->
+            </div>
+          </section>
+
+          <!-- 3 Education -->
+          <section class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h2>3 — Education</h2>
+              <button type="button" class="add-btn" id="add-edu">+ Add Education</button>
+            </div>
+            <div id="edu-list"></div>
+          </section>
+
+          <!-- 4 Certifications -->
+          <section class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h2>4 — Certifications</h2>
+              <button type="button" class="add-btn" id="add-cert">+ Add Cert</button>
+            </div>
+            <div id="cert-list"></div>
+          </section>
+
+          <div class="submit-row">
+            <button type="submit" class="submit-btn" id="submit-btn">Submit</button>
+          </div>
+
+          <div class="muted-note">All fields marked * are mandatory.</div>
+        </form>
+
       </div>
     </div>
   </div>
 
-<script>
-  appCommon.initSupabase();
-  const supabase = appCommon.supabaseClientRef();
+  <script>
+    // CONFIG: keep the same Supabase URL/ANON KEY you used in your project
+    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
 
-  const fld = (id) => document.getElementById(id)
-  const statusEl = null
+    const { createClient } = supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-  // local arrays (simple implementation)
-  function loadLocal() {
-    return JSON.parse(localStorage.getItem('rb_extra') || '{"work":[],"edu":[],"certs":[]}')
-  }
-  function saveLocal(obj){
-    localStorage.setItem('rb_extra', JSON.stringify(obj))
-  }
+    // UI refs
+    const loggedAs = document.getElementById('logged-as')
+    const btnLogout = document.getElementById('btn-logout')
+    const btnEdit = document.getElementById('btn-edit-profile')
+    const form = document.getElementById('resume-form')
+    const submitBtn = document.getElementById('submit-btn')
 
-  async function initPage(){
-    const userResp = await appCommon.getUser();
-    if(!userResp) {
-      window.location.href = 'login.html';
-      return;
-    }
-    const user = userResp;
-    fld('profile-email').innerText = 'Logged in as ' + user.email
-    fld('login-status').innerText = 'Logged in as ' + user.email
+    // lists
+    const workList = document.getElementById('work-list')
+    const eduList = document.getElementById('edu-list')
+    const certList = document.getElementById('cert-list')
 
-    // try to load profile from "profiles" table
-    let profileData = null
-    try{
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      if(!error && data) profileData = data
-    }catch(e){ /* ignore */ }
+    let currentUser = null
+    let existingProfile = null
 
-    // if no row exists, we'll be in "edit mode" (allow filling)
-    if(profileData){
-      // prefill
-      fld('full_name').value = profileData.full_name || ''
-      fld('email').value = user.email || ''
-      fld('phone').value = profileData.phone || ''
-      fld('location').value = profileData.location || ''
-      fld('linkedin').value = profileData.linkedin || ''
-      // hide editing initially
-      setEditable(false)
-      document.getElementById('btn-submit').innerText = 'Save changes'
-    } else {
-      // new user -> editable
-      fld('email').value = user.email || ''
-      setEditable(true)
-      document.getElementById('btn-submit').innerText = 'Submit'
-    }
-
-    // load local experiences/education/certs if any
-    const extra = loadLocal()
-    renderList('work-list', extra.work, ['company','title','dates','bullets'])
-    renderList('edu-list', extra.edu, ['institution','degree','dates','notes'])
-    renderList('cert-list', extra.certs, ['name','issuer','date'])
-  }
-
-  function setEditable(flag){
-    const inputs = document.querySelectorAll('input, textarea')
-    inputs.forEach(i=> i.disabled = !flag)
-    document.getElementById('btn-submit').style.display = flag ? 'inline-block' : 'none'
-    document.getElementById('btn-edit-toggle').innerText = flag ? 'Cancel' : 'Edit profile'
-  }
-
-  document.getElementById('btn-edit-toggle').addEventListener('click', ()=>{
-    const isEditing = document.getElementById('full_name').disabled === false
-    setEditable(!isEditing)
-  })
-
-  document.getElementById('btn-logout').addEventListener('click', ()=> appCommon.signOutAndRedirect())
-
-  // Trigger to add simple items to lists (local)
-  function renderList(containerId, arr, fields) {
-    const cont = fld(containerId)
-    if(!arr || arr.length === 0) { cont.innerHTML = '<div class="small-muted">No items added yet.</div>'; return }
-    cont.innerHTML = ''
-    arr.forEach((it, idx)=>{
-      const el = document.createElement('div')
-      el.style.marginBottom = '10px'
-      el.style.background = 'rgba(255,255,255,0.06)'
-      el.style.padding = '12px'
-      el.style.borderRadius = '8px'
-      el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:700">${(it[fields[0]] || fields[0])} ${(it.title?('- '+it.title):'')}</div>
-        <div><button data-idx="${idx}" data-c="${containerId}" class="btn btn-edit small-edit">Delete</button></div>
+    // helpers to create entry DOM
+    function createWorkEntry(data = {}) {
+      const wrapper = document.createElement('div')
+      wrapper.className = 'entry'
+      wrapper.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label>Company Name *</label>
+            <input class="w-company" type="text" value="${escapeHtml(data.company||'')}" placeholder="Tech Corp Inc." required />
+          </div>
+          <div>
+            <label>Job Title *</label>
+            <input class="w-title" type="text" value="${escapeHtml(data.title||'')}" placeholder="Senior Developer" required />
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label>Dates</label>
+            <input class="w-dates" type="text" value="${escapeHtml(data.dates||'')}" placeholder="January 2020 - Present" />
+          </div>
         </div>
-        <div style="margin-top:6px;color:rgba(255,255,255,0.85)">${(it.dates||'')}</div>`
-      cont.appendChild(el)
-    })
-    // attach delete handlers
-    cont.querySelectorAll('.small-edit').forEach(b=>{
-      b.addEventListener('click', (ev)=>{
-        const idx = parseInt(ev.currentTarget.dataset.idx)
-        const c = ev.currentTarget.dataset.c
-        const extra = loadLocal()
-        if(c === 'work-list') extra.work.splice(idx,1)
-        if(c === 'edu-list') extra.edu.splice(idx,1)
-        if(c === 'cert-list') extra.certs.splice(idx,1)
-        saveLocal(extra)
-        renderList('work-list', extra.work, ['company','title','dates','bullets'])
-        renderList('edu-list', extra.edu, ['institution','degree','dates','notes'])
-        renderList('cert-list', extra.certs, ['name','issuer','date'])
-      })
-    })
-  }
-
-  document.getElementById('btn-add-work').addEventListener('click', ()=>{
-    const company = prompt('Company name')
-    if(!company) return
-    const title = prompt('Job title') || ''
-    const dates = prompt('Dates (e.g. Jan 2020 - Present)') || ''
-    const bullets = prompt('Short bullets (newline separated)') || ''
-    const extra = loadLocal()
-    extra.work.unshift({ company, title, dates, bullets })
-    saveLocal(extra)
-    renderList('work-list', extra.work, ['company','title','dates','bullets'])
-  })
-
-  document.getElementById('btn-add-edu').addEventListener('click', ()=>{
-    const inst = prompt('Institution name')
-    if(!inst) return
-    const degree = prompt('Degree') || ''
-    const dates = prompt('Dates') || ''
-    const notes = prompt('Notes') || ''
-    const extra = loadLocal()
-    extra.edu.unshift({ institution:inst, degree, dates, notes })
-    saveLocal(extra)
-    renderList('edu-list', extra.edu, ['institution','degree','dates','notes'])
-  })
-
-  document.getElementById('btn-add-cert').addEventListener('click', ()=>{
-    const name = prompt('Certification name')
-    if(!name) return
-    const issuer = prompt('Issuing organization') || ''
-    const date = prompt('Date obtained') || ''
-    const extra = loadLocal()
-    extra.certs.unshift({ name, issuer, date })
-    saveLocal(extra)
-    renderList('cert-list', extra.certs, ['name','issuer','date'])
-  })
-
-  // Submit / Save profile
-  document.getElementById('btn-submit').addEventListener('click', async ()=>{
-    const user = await appCommon.getUser()
-    if(!user) { window.location.href = 'login.html'; return }
-    const payload = {
-      id: user.id,
-      full_name: fld('full_name').value || null,
-      phone: fld('phone').value || null,
-      location: fld('location').value || null,
-      linkedin: fld('linkedin').value || null,
-      github: null
+        <div style="text-align:right;margin-top:8px;">
+          <button type="button" class="add-btn remove-entry" style="background:#ff6b6b">Delete</button>
+        </div>`
+      wrapper.querySelector('.remove-entry').addEventListener('click', () => wrapper.remove())
+      return wrapper
     }
-    try{
-      const { error } = await supabase.from('profiles').upsert(payload, { returning: 'minimal' })
-      if(error) {
-        alert('Save error: ' + error.message)
+
+    function createEduEntry(data = {}) {
+      const wrapper = document.createElement('div')
+      wrapper.className = 'entry'
+      wrapper.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label>Degree</label><input class="e-degree" type="text" value="${escapeHtml(data.degree||'')}" placeholder="Bachelor of Science" />
+          </div>
+          <div>
+            <label>Institution</label><input class="e-institution" type="text" value="${escapeHtml(data.institution||'')}" placeholder="University" />
+          </div>
+          <div>
+            <label>Graduation</label><input class="e-grad" type="text" value="${escapeHtml(data.graduation||'')}" placeholder="May 2020" />
+          </div>
+          <div>
+            <label>Honors / GPA</label><input class="e-honors" type="text" value="${escapeHtml(data.honors||'')}" placeholder="3.8 GPA" />
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:8px;">
+          <button type="button" class="add-btn remove-entry" style="background:#ff6b6b">Delete</button>
+        </div>`
+      wrapper.querySelector('.remove-entry').addEventListener('click', () => wrapper.remove())
+      return wrapper
+    }
+
+    function createCertEntry(data = {}) {
+      const wrapper = document.createElement('div')
+      wrapper.className = 'entry'
+      wrapper.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="grid-column:1 / -1">
+            <label>Certification</label><input class="c-name" type="text" value="${escapeHtml(data.name||'')}" placeholder="AWS Certified Developer" />
+          </div>
+          <div>
+            <label>Organization</label><input class="c-org" type="text" value="${escapeHtml(data.organization||'')}" placeholder="Amazon Web Services" />
+          </div>
+          <div>
+            <label>Date</label><input class="c-date" type="text" value="${escapeHtml(data.date||'')}" placeholder="June 2021" />
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:8px;">
+          <button type="button" class="add-btn remove-entry" style="background:#ff6b6b">Delete</button>
+        </div>`
+      wrapper.querySelector('.remove-entry').addEventListener('click', () => wrapper.remove())
+      return wrapper
+    }
+
+    // escape simple html in values
+    function escapeHtml(str) {
+      if (!str) return ''
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+    }
+
+    // auth check and page init
+    async function init() {
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      currentUser = user
+      if (!user) {
+        // redirect to login page if not logged in
+        window.location.href = 'login.html'
         return
       }
-      // keep extra in localStorage (you can migrate to DB tables later)
-      alert('Profile saved')
-      setEditable(false)
-      document.getElementById('btn-submit').innerText = 'Save changes'
-    }catch(e){ alert('Save failed') }
-  })
+      loggedAs.textContent = `Logged in as ${user.email}`
+      // load profile if exists
+      await loadProfile(user.id)
+    }
 
-  // init on load
-  initPage()
-</script>
+    async function loadProfile(userId) {
+      // profiles table
+      const { data: profile, error: pErr } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+      if (pErr) console.error('profiles select error', pErr)
+
+      existingProfile = profile || null
+
+      if (existingProfile) {
+        // populate fields
+        document.getElementById('full_name').value = existingProfile.full_name || ''
+        document.getElementById('email').value = existingProfile.email || currentUser.email
+        document.getElementById('phone').value = existingProfile.phone || ''
+        document.getElementById('location').value = existingProfile.location || ''
+        document.getElementById('linkedin').value = existingProfile.linkedin || ''
+        // load experiences and education
+        await loadExperiences(userId)
+        await loadEducation(userId)
+        // change submit button to "Update profile"
+        submitBtn.textContent = 'Update'
+      } else {
+        // new user -> blank form
+        document.getElementById('email').value = currentUser.email || ''
+        submitBtn.textContent = 'Submit'
+        // add one empty default entry for work / edu
+        if (!workList.children.length) workList.appendChild(createWorkEntry())
+        if (!eduList.children.length) eduList.appendChild(createEduEntry())
+      }
+    }
+
+    async function loadExperiences(userId) {
+      const { data, error } = await supabaseClient
+        .from('experiences')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending:false })
+      if (error) { console.error('experiences select', error); return }
+      workList.innerHTML = ''
+      if (data && data.length) {
+        data.forEach(w => workList.appendChild(createWorkEntry({ company: w.company, title: w.title, dates: w.start_date && w.end_date ? (w.start_date + ' - ' + w.end_date) : (w.start_date || w.end_date || '') })))
+      } else {
+        workList.appendChild(createWorkEntry())
+      }
+    }
+
+    async function loadEducation(userId) {
+      const { data, error } = await supabaseClient
+        .from('education')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending:false })
+      if (error) { console.error('education select', error); return }
+      eduList.innerHTML = ''
+      if (data && data.length) {
+        data.forEach(e => eduList.appendChild(createEduEntry({ degree: e.degree, institution: e.institution, graduation: e.end_date, honors: e.notes })))
+      } else {
+        eduList.appendChild(createEduEntry())
+      }
+    }
+
+    // add handlers for add buttons
+    document.getElementById('add-work').addEventListener('click', ()=> workList.appendChild(createWorkEntry()))
+    document.getElementById('add-edu').addEventListener('click', ()=> eduList.appendChild(createEduEntry()))
+    document.getElementById('add-cert').addEventListener('click', ()=> certList.appendChild(createCertEntry()))
+
+    // logout
+    btnLogout.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut()
+      window.location.href = 'login.html'
+    })
+
+    // edit button: navigate to the edit page or focus form
+    btnEdit.addEventListener('click', () => {
+      // scroll to form and focus first field
+      document.getElementById('full_name').focus()
+      window.scrollTo({ top: document.getElementById('resume-form').offsetTop - 20, behavior:'smooth' })
+    })
+
+    // submit handler: upsert profile + insert experiences/education (basic)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      submitBtn.disabled = true
+      submitBtn.textContent = 'Saving...'
+
+      const payload = {
+        id: currentUser.id,
+        full_name: document.getElementById('full_name').value || null,
+        email: document.getElementById('email').value || null,
+        phone: document.getElementById('phone').value || null,
+        location: document.getElementById('location').value || null,
+        linkedin: document.getElementById('linkedin').value || null,
+      }
+
+      // upsert profile
+      const { error: upErr } = await supabaseClient
+        .from('profiles')
+        .upsert(payload, { returning: 'minimal' })
+
+      if (upErr) {
+        alert('Error saving profile: ' + upErr.message)
+        submitBtn.disabled = false
+        submitBtn.textContent = existingProfile ? 'Update' : 'Submit'
+        return
+      }
+
+      // delete old experiences/education and re-insert simple copies (keeps sync simple)
+      // NOTE: depending on your DB and policies, you may want to keep update instead.
+      await supabaseClient.from('experiences').delete().eq('user_id', currentUser.id)
+      await supabaseClient.from('education').delete().eq('user_id', currentUser.id)
+
+      // gather experiences
+      const experiences = []
+      document.querySelectorAll('#work-list .entry').forEach(entry => {
+        const company = entry.querySelector('.w-company')?.value || ''
+        const title = entry.querySelector('.w-title')?.value || ''
+        const dates = entry.querySelector('.w-dates')?.value || ''
+        if (company || title) experiences.push({ user_id: currentUser.id, company, title, start_date: dates, created_at: new Date().toISOString() })
+      })
+
+      if (experiences.length) {
+        const { error: expErr } = await supabaseClient.from('experiences').insert(experiences)
+        if (expErr) console.error('insert experiences error', expErr)
+      }
+
+      // gather education
+      const educationRows = []
+      document.querySelectorAll('#edu-list .entry').forEach(entry => {
+        const degree = entry.querySelector('.e-degree')?.value || ''
+        const institution = entry.querySelector('.e-institution')?.value || ''
+        const graduation = entry.querySelector('.e-grad')?.value || ''
+        const honors = entry.querySelector('.e-honors')?.value || ''
+        if (degree || institution) educationRows.push({ user_id: currentUser.id, degree, institution, start_date: null, end_date: graduation, notes: honors, created_at: new Date().toISOString() })
+      })
+      if (educationRows.length) {
+        const { error: eduErr } = await supabaseClient.from('education').insert(educationRows)
+        if (eduErr) console.error('insert education error', eduErr)
+      }
+
+      // simple success flow: reload profile view
+      existingProfile = payload
+      alert('Profile saved')
+      submitBtn.disabled = false
+      submitBtn.textContent = 'Update'
+      await loadProfile(currentUser.id)
+    })
+
+    // initialize listener for auth on load
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (!session || !session.user) {
+        window.location.href = 'login.html'
+      }
+    })
+
+    init().catch(e => {
+      console.error('init error', e)
+      // safe fallback: redirect to login
+      window.location.href = 'login.html'
+    })
+  </script>
 </body>
 </html>
