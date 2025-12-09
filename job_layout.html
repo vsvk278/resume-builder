@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Choose Layout — Resume Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-r from-sky-600 to-indigo-700 p-6 text-white">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold">Create New Resume</h1>
+      <p class="opacity-90 mt-2">Start by entering the job description</p>
+    </div>
+
+    <!-- Job Description -->
+    <div id="jobDesc" class="bg-white text-gray-800 rounded-xl shadow p-6 mb-8">
+      <label class="block text-lg font-bold mb-2">Job Description</label>
+      <textarea id="jobDescription" rows="8" class="w-full p-4 border rounded" placeholder="Paste the job description here..."></textarea>
+      <div class="flex justify-between mt-4">
+        <button id="cancelJob" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+        <button id="continueLayout" class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-2 rounded">Continue to Layout</button>
+      </div>
+    </div>
+
+    <!-- Layout Selection -->
+    <div id="layoutSelection" class="hidden">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold">Choose Your Resume Layout</h2>
+        <p class="opacity-90">Select a layout that best fits your style</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white text-gray-800 rounded-xl p-4 cursor-pointer layout" data-layout="classic">
+          <div class="py-4 text-center font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md">Classic</div>
+          <p class="mt-4">Traditional single-column layout</p>
+        </div>
+        <div class="bg-white text-gray-800 rounded-xl p-4 cursor-pointer layout" data-layout="modern">
+          <div class="py-4 text-center font-bold bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-md">Modern</div>
+          <p class="mt-4">Two-column design with sidebar</p>
+        </div>
+        <div class="bg-white text-gray-800 rounded-xl p-4 cursor-pointer layout" data-layout="creative">
+          <div class="py-4 text-center font-bold bg-gradient-to-r from-green-600 to-green-700 text-white rounded-md">Creative</div>
+          <p class="mt-4">Bold and colorful</p>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <button id="backToJob" class="bg-gray-500 text-white px-6 py-2 rounded"> ← Back </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // require login
+    if (!localStorage.getItem('rb_logged_in')) location.href = 'login.html';
+
+    const jobDescEl = document.getElementById('jobDesc');
+    const layoutEl = document.getElementById('layoutSelection');
+
+    document.getElementById('continueLayout').addEventListener('click', ()=>{
+      const jd = document.getElementById('jobDescription').value.trim();
+      if (!jd) { alert('Enter a job description'); return; }
+      // save JD to localStorage
+      localStorage.setItem('rb_job_description', jd);
+      jobDescEl.classList.add('hidden');
+      layoutEl.classList.remove('hidden');
+    });
+
+    document.getElementById('cancelJob').addEventListener('click', ()=>{
+      // go to main
+      location.href = 'main.html';
+    });
+
+    document.getElementById('backToJob').addEventListener('click', ()=>{
+      layoutEl.classList.add('hidden');
+      jobDescEl.classList.remove('hidden');
+    });
+
+    document.querySelectorAll('.layout').forEach(node=>{
+      node.addEventListener('click', ()=>{
+        const layout = node.dataset.layout;
+        localStorage.setItem('rb_layout', layout);
+        // Prepare blank resume data
+        const baseResume = {
+          full_name: '',
+          email: '',
+          phone: '',
+          location: '',
+          linkedin: '',
+          work_experiences: [],
+          education_entries: [],
+          certifications: [],
+          layout,
+          job_description: localStorage.getItem('rb_job_description') || ''
+        };
+        localStorage.setItem('rb_draft_resume', JSON.stringify(baseResume));
+        location.href = 'main.html';
+      });
+    });
+  </script>
+</body>
+</html>
