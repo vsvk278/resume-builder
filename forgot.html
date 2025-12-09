@@ -5,12 +5,12 @@
   <title>Resume Builder — Forgot password</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
-    .card{background:#0b1220;border:1px solid #172033;padding:16px;border-radius:8px;margin-bottom:12px}
-    input,button{display:block;width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #233040;background:#071226;color:#fff;box-sizing:border-box}
-    button{cursor:pointer;background:#0ea5a4;color:#012;border:0;padding:10px;font-weight:600}
-    small{color:#9aa7b2}
+    body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
+    .card{background:#0b1220;border:1px solid #172033;padding:20px;border-radius:10px;margin-bottom:14px}
+    input,button{display:block;width:100%;margin:8px 0;padding:12px;border-radius:8px;border:1px solid #233040;background:#071226;color:#fff;box-sizing:border-box}
+    button{cursor:pointer;background:#0ea5a4;color:#012;border:0;padding:12px;font-weight:700}
     a{color:#7dd3fc}
+    small{color:#9aa7b2}
   </style>
 </head>
 <body>
@@ -18,36 +18,37 @@
 
   <div class="card">
     <h3>Reset password</h3>
-    <input id="fp-email" placeholder="Enter your account email" />
+    <input id="fp-email" placeholder="Enter your account email" autocomplete="email" />
     <button id="btn-reset">Send reset email</button>
-    <p id="msg"><small>Return to <a href="login.html">Log in</a></small></p>
+    <p class="muted" id="msg"><small>Return to <a href="login.html">Login</a></small></p>
   </div>
 
+  <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
   <script>
-    // CONFIG - update if needed
     const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
     const { createClient } = supabase
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     const msg = document.getElementById('msg')
+
     document.getElementById('btn-reset').onclick = async () => {
       msg.textContent = 'Sending reset email...'
-      const email = document.getElementById('fp-email').value
+      const email = document.getElementById('fp-email').value.trim()
+      if (!email) { msg.textContent = 'Please enter your email.'; return }
+
       try {
-        // supabase-js V2 supports resetPasswordForEmail; if this errors, user will see the message.
         const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email)
         if (error) msg.textContent = 'Error: ' + error.message
-        else msg.textContent = 'Reset email sent (check your inbox).'
+        else msg.textContent = 'Reset email sent. Check your inbox.'
       } catch (err) {
-        // fallback: show helpful message
-        msg.textContent = 'Request sent. If you do not receive email, check your address or Supabase settings.'
         console.error(err)
+        msg.textContent = 'Request sent. If no email, check your address or Supabase SMTP settings.'
       }
     }
 
-    // If already logged in, go to home
+    // If already logged in, go to dashboard
     (async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (user) window.location.href = 'home.html'

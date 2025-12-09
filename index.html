@@ -5,12 +5,14 @@
   <title>Resume Builder — Sign Up</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
-    .card{background:#0b1220;border:1px solid #172033;padding:16px;border-radius:8px;margin-bottom:12px}
-    input,button{display:block;width:100%;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #233040;background:#071226;color:#fff;box-sizing:border-box}
-    button{cursor:pointer;background:#0ea5a4;color:#012;border:0;padding:10px;font-weight:600}
+    body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:2rem auto;padding:1rem;color:#f1f1f1;background:#0f1720}
+    .card{background:#0b1220;border:1px solid #172033;padding:20px;border-radius:10px;margin-bottom:14px}
+    input,button{display:block;width:100%;margin:8px 0;padding:12px;border-radius:8px;border:1px solid #233040;background:#071226;color:#fff;box-sizing:border-box}
+    button{cursor:pointer;background:#0ea5a4;color:#012;border:0;padding:12px;font-weight:700}
+    h1{font-size:28px;margin-bottom:14px}
     small{color:#9aa7b2}
     a{color:#7dd3fc}
+    .muted{color:#9aa7b2}
   </style>
 </head>
 <body>
@@ -19,22 +21,20 @@
   <div class="card">
     <h3>Create account</h3>
 
-    <input id="su-name" placeholder="Full Name" />
-
-    <input id="su-email" placeholder="Email" />
-
-    <input id="su-password" type="password" placeholder="Password (min 6 chars)" />
-
-    <input id="su-confirm" type="password" placeholder="Confirm Password" />
+    <input id="su-name" placeholder="Full name" autocomplete="name" />
+    <input id="su-email" placeholder="Email" autocomplete="email" />
+    <input id="su-password" type="password" placeholder="Password (min 6 chars)" autocomplete="new-password" />
+    <input id="su-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" />
 
     <button id="btn-signup">Sign Up</button>
 
-    <p id="msg"><small>Already have an account? <a href="login.html">Login</a></small></p>
+    <p class="muted" id="msg"><small>Already have an account? <a href="login.html">Login</a></small></p>
   </div>
 
+  <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
   <script>
-    // CONFIG
+    // CONFIG (keep these values as your project keys)
     const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
     const { createClient } = supabase
@@ -51,12 +51,13 @@
       const confirm = document.getElementById('su-confirm').value
 
       // Basic validation
-      if (!name) return msg.textContent = 'Full name is required.'
-      if (!email) return msg.textContent = 'Email is required.'
-      if (!password) return msg.textContent = 'Password is required.'
-      if (password !== confirm) return msg.textContent = 'Passwords do not match.'
+      if (!name) { msg.textContent = 'Full name is required.'; return }
+      if (!email) { msg.textContent = 'Email is required.'; return }
+      if (!password) { msg.textContent = 'Password is required.'; return }
+      if (password.length < 6) { msg.textContent = 'Password must be at least 6 characters.'; return }
+      if (password !== confirm) { msg.textContent = 'Passwords do not match.'; return }
 
-      // Create user
+      // Create user and store full_name in user_metadata
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
@@ -68,12 +69,12 @@
       if (error) {
         msg.textContent = 'Error: ' + error.message
       } else {
-        msg.innerHTML = '<small>Signup successful. Redirecting to login in 3s...</small>'
+        msg.innerHTML = '<small>Sign up successful. Redirecting to Login in 3s...</small>'
         setTimeout(() => window.location.href = 'login.html', 3000)
       }
     }
 
-    // If already logged in → redirect to dashboard
+    // If already logged in, go to dashboard
     (async () => {
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (user) window.location.href = 'home.html'
