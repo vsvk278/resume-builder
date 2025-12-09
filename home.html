@@ -1,371 +1,273 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Resume Builder — Signup / Login</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body { font-family: Arial, Helvetica, sans-serif; max-width:900px; margin:2rem auto; padding:1rem; color:#f1f1f1; background:#0f1720; }
-    .card { background:#0b1220; border:1px solid #172033; padding:16px; border-radius:8px; margin-bottom:12px; }
-    input, button, textarea { display:block; width:100%; margin:8px 0; padding:10px; border-radius:6px; border:1px solid #233040; background:#071226; color:#fff; box-sizing:border-box;}
-    button { cursor:pointer; background:#0ea5a4; color:#012; border:0; padding:10px; font-weight:600; }
-    .row { display:flex; gap:8px; }
-    .hidden { display:none; }
-    small { color:#9aa7b2; }
-    label { color:#cfe8f0; font-weight:600; }
-    hr { border:none; border-top:1px solid #233040; margin:18px 0; }
-  </style>
-</head>
-<body>
-  <h1>Resume Builder — Signup / Login</h1>
+<!-- Add this CSS into <head> or near your existing styles to style the rendered resume -->
+<style id="resume-styles">
+/* Minimal resume styling modeled after your PDF example */
+.resume {
+  background: #071226;
+  color: #e6eef2;
+  padding: 22px;
+  border-radius: 6px;
+  font-family: 'Arial', sans-serif;
+  line-height: 1.3;
+}
+.resume .header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.resume h1 { margin:0; font-size:22px; color:#fff; }
+.resume h2 { margin:4px 0 12px 0; font-size:14px; color:#bfe7ea; font-weight:600; }
+.resume .contact { text-align:right; font-size:13px; color:#bcd3d8; }
+.section { margin-top:16px; }
+.section h3 { margin:0 0 8px 0; font-size:15px; border-bottom:1px solid rgba(190,220,225,0.06); padding-bottom:6px; color:#cfe8f0; }
+.exp-item { margin:10px 0; }
+.exp-item .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.exp-item .role { font-weight:700; color:#e8f6f7; }
+.exp-item .company { color:#bcd3d8; }
+.exp-item .dates { color:#9fb1b6; font-size:13px; }
+.exp-item ul { margin:8px 0 0 18px; }
+.kv { display:inline-block; margin-right:10px; color:#bcd3d8; font-size:13px; }
+.ats { margin-top:8px; font-size:13px; color:#cfe8f0; }
+</style>
 
-  <div id="dashboard" class="card">
-    <p>Logged in as <strong><span id="user-email"></span></strong></p>
-    <div class="row" style="margin-bottom:12px;">
-      <button id="btn-logout" style="flex:1;background:#ef4444;color:#fff;">Logout</button>
-      <button id="btn-refresh" style="flex:1;background:#0ea5a4;color:#012;">Refresh profile</button>
-    </div>
+<script>
+/*
+  New buildPromptJSON: builds a deterministic instruction asking for JSON.
+  New callLLMAndRender: calls OpenAI, parses JSON, and renders HTML using renderTailoredResume(jsonObj).
+  Replace your previous generate button handler with the handler below (or simply update existing handler).
+*/
 
-    <h3>Your profile (saved to DB)</h3>
-    <label>Full name</label>
-    <input id="full_name" placeholder="Full name" />
-    <label>Phone</label>
-    <input id="phone" placeholder="Phone" />
-    <label>Location</label>
-    <input id="location" placeholder="City, Country" />
-    <label>LinkedIn</label>
-    <input id="linkedin" placeholder="LinkedIn URL" />
-    <label>GitHub</label>
-    <input id="github" placeholder="GitHub URL" />
-    <button id="btn-save-profile">Save Profile</button>
+async function buildPromptJSON(jobDescription) {
+  // gather user info from supabase
+  const { data: { user } } = await supabaseClient.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
 
-    <hr />
+  // Get profile, exps, edus
+  const [profileRes, expsRes, edusRes] = await Promise.all([
+    supabaseClient.from('profiles').select('*').eq('id', user.id).single(),
+    supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending:false }),
+    supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending:false })
+  ])
 
-    <h3>Experience</h3>
-    <div id="experience-form" style="margin-bottom:12px;">
-      <label>Company</label>
-      <input id="exp-company" placeholder="Company" />
-      <label>Title</label>
-      <input id="exp-title" placeholder="Role/Title" />
-      <label>Start date</label>
-      <input id="exp-start" type="date" />
-      <label>End date (or leave blank)</label>
-      <input id="exp-end" type="date" />
-      <label>Bullets (one per line)</label>
-      <textarea id="exp-bullets" rows="4" placeholder="Achieved X...&#10;Improved Y..."></textarea>
-      <div class="row">
-        <button id="btn-add-exp" style="flex:1;background:#0ea5a4;color:#012;">Add Experience</button>
-        <button id="btn-refresh-exps" style="flex:1;background:#334155;color:#fff;">Refresh</button>
-      </div>
-    </div>
-    <div id="experiences-list"><small>No experiences yet.</small></div>
+  const profile = profileRes?.data || {}
+  const exps = expsRes?.data || []
+  const edus = edusRes?.data || []
 
-    <hr />
+  // Build a compact plain-text resume snapshot for the model
+  let resumeSnapshot = `Name: ${profile.full_name || ''}\nLocation: ${profile.location || ''}\nPhone: ${profile.phone || ''}\nEmail: ${user.email}\nLinkedIn: ${profile.linkedin || ''}\nGitHub: ${profile.github || ''}\n\nExperience:\n`
+  for (const e of exps) {
+    resumeSnapshot += `- ${e.title || ''} at ${e.company || ''} (${e.start_date || ''} - ${e.end_date || 'Present'})\n`
+    if (e.bullets) resumeSnapshot += e.bullets.split('\n').map(b => `  * ${b}`).join('\n') + '\n'
+  }
+  resumeSnapshot += '\nEducation:\n'
+  for (const d of edus) {
+    resumeSnapshot += `- ${d.degree || ''} at ${d.institution || ''} (${d.start_date || ''} - ${d.end_date || ''})\n`
+  }
 
-    <h3>Education</h3>
-    <div id="education-form" style="margin-bottom:12px;">
-      <label>Institution</label>
-      <input id="edu-institution" placeholder="College / Univ" />
-      <label>Degree</label>
-      <input id="edu-degree" placeholder="B.Sc / M.Sc / B.Tech" />
-      <label>Start date</label>
-      <input id="edu-start" type="date" />
-      <label>End date</label>
-      <input id="edu-end" type="date" />
-      <label>Notes</label>
-      <textarea id="edu-notes" rows="3" placeholder="Any honours / achievements"></textarea>
-      <div class="row">
-        <button id="btn-add-edu" style="flex:1;background:#0ea5a4;color:#012;">Add Education</button>
-        <button id="btn-refresh-edus" style="flex:1;background:#334155;color:#fff;">Refresh</button>
-      </div>
-    </div>
-    <div id="education-list"><small>No education yet.</small></div>
+  // Prompt: ask for JSON only (no extra text)
+  const instruction = `
+You are an expert resume writer and ATS specialist. Based on the user's resume snapshot and the Job Description below, produce a JSON object only (no additional explanation, no markdown).
+The JSON must match this exact schema:
 
-    <p id="status" class="small-muted"></p>
-  </div>
+{
+  "name": "Full Name",
+  "title": "Target Job Title (1-4 words)",
+  "contact": { "location": "...", "phone": "...", "email": "...", "linkedin": "...", "github": "..." },
+  "summary": "2-4 sentence targeted summary (include top keywords from JD)",
+  "experience": [
+    {
+      "title": "Senior DevOps Engineer",
+      "company": "Acme",
+      "dates": "Aug 2021 - May 2023",
+      "bullets": ["Action-oriented accomplishment 1", "Accomplishment 2", "Accomplishment 3"]
+    },
+    ...
+  ],
+  "education": [
+    { "degree":"B.Tech Mechanical Engineering", "institution":"XYZ", "dates":"2014 - 2018" }
+  ],
+  "skills": ["skill1","skill2","..."],
+  "certifications": ["cert1","cert2"],
+  "ats_keywords": ["keyword1","keyword2","..."]
+}
 
-  <!-- === AI Tailoring section (also inside home) === -->
-  <div class="card">
-    <h3>AI Tailoring (user-supplied API key)</h3>
-    <label>OpenAI API key (stored in browser localStorage)</label>
-    <input id="user-api-key" placeholder="sk-..." />
-    <div class="row">
-      <button id="btn-save-key" style="flex:1;background:#0ea5a4;color:#012;">Save Key</button>
-      <button id="btn-clear-key" style="flex:1;background:#ef4444;color:#fff;">Clear Key</button>
-    </div>
-    <small id="key-hint">Key stored in localStorage for this browser only.</small>
-    <hr />
-    <label>Paste job description</label>
-    <textarea id="job-desc" style="height:120px"></textarea>
-    <div class="row">
-      <button id="btn-generate" style="flex:1;background:#06b6d4;color:#012;">Generate tailored resume</button>
-      <button id="btn-copy-output" style="flex:1;background:#334155;color:#fff;">Copy output</button>
-    </div>
-    <p id="llm-status" class="small-muted"></p>
-    <h4>Generated tailored resume</h4>
-    <div id="llm-output" class="card" style="white-space:pre-wrap; max-height:420px; overflow:auto; background:#071226;"></div>
-    <div style="margin-top:8px;"><button id="btn-print" style="background:#0ea5a4;color:#012;">Print / Save as PDF</button></div>
-  </div>
+Rules:
+- Return valid JSON only (top-level object). No commentary, no explanations.
+- Use 3-6 bullets for each relevant experience role, rewrite bullets as accomplishment-driven and include keywords from the Job Description.
+- Make summary concise and tailored to the Job Description.
+- Infer 'title' from the Job Description and user's history.
+- If information is missing, provide reasonable inferred text but keep it truthful.
 
-  <!-- supabase UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+User resume snapshot:
+${resumeSnapshot}
 
-  <script>
-    // CONFIG - replace if needed
-    const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
-    const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
-    const { createClient } = supabase
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-    // helpers
-    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') }
-
-    // Auth-check on load: redirect to login if no session
-    (async function authCheck(){
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) {
-        window.location.href = 'index.html'
-        return
-      }
-      document.getElementById('user-email').textContent = user.email
-      // load data for dashboard
-      await loadProfileAndLists()
-    })()
-
-    async function loadProfileAndLists(){
-      // load profile
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) return
-      const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single()
-      if (data) {
-        document.getElementById('full_name').value = data.full_name || ''
-        document.getElementById('phone').value = data.phone || ''
-        document.getElementById('location').value = data.location || ''
-        document.getElementById('linkedin').value = data.linkedin || ''
-        document.getElementById('github').value = data.github || ''
-      }
-      await loadExperiences()
-      await loadEducation()
-    }
-
-    // PROFILE save
-    document.getElementById('btn-save-profile').onclick = async () => {
-      document.getElementById('status').textContent = 'Saving...'
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) { document.getElementById('status').textContent = 'Not authenticated'; return }
-      const payload = {
-        id: user.id,
-        full_name: document.getElementById('full_name').value || null,
-        phone: document.getElementById('phone').value || null,
-        location: document.getElementById('location').value || null,
-        linkedin: document.getElementById('linkedin').value || null,
-        github: document.getElementById('github').value || null
-      }
-      const { error } = await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' })
-      if (error) document.getElementById('status').textContent = 'Error: ' + error.message
-      else document.getElementById('status').textContent = 'Profile saved'
-    }
-
-    // LOGOUT
-    document.getElementById('btn-logout').onclick = async () => {
-      await supabaseClient.auth.signOut()
-      window.location.href = 'index.html'
-    }
-    document.getElementById('btn-refresh').onclick = loadProfileAndLists
-
-    // Experiences & Education functions
-    async function loadExperiences() {
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) { document.getElementById('experiences-list').innerHTML = '<small>Login to see experiences</small>'; return }
-      const { data, error } = await supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-      if (error) { console.log('loadExperiences error', error); return }
-      if (!data || data.length === 0) { document.getElementById('experiences-list').innerHTML = '<small>No experiences yet.</small>'; return }
-      const html = data.map(e => {
-        const bullets = (e.bullets||'').split('\n').map(b => `<li>${escapeHtml(b)}</li>`).join('')
-        return `<div class="card" style="margin-bottom:8px;">
-          <strong>${escapeHtml(e.title||'')}</strong> — ${escapeHtml(e.company||'')}<br/>
-          <small>${e.start_date || ''} — ${e.end_date || 'Present'}</small>
-          <ul style="margin-top:8px;">${bullets}</ul>
-          <button data-id="${e.id}" class="btn-del-exp" style="background:#ef4444;color:#fff;border:0;padding:6px;border-radius:6px;">Delete</button>
-        </div>`
-      }).join('')
-      document.getElementById('experiences-list').innerHTML = html
-      document.querySelectorAll('.btn-del-exp').forEach(btn => {
-        btn.onclick = async (ev) => {
-          const id = ev.target.dataset.id
-          if (!confirm('Delete this experience?')) return
-          const { error } = await supabaseClient.from('experiences').delete().eq('id', id)
-          if (error) alert('Delete error: ' + error.message)
-          else loadExperiences()
-        }
-      })
-    }
-
-    async function loadEducation() {
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) { document.getElementById('education-list').innerHTML = '<small>Login to see education</small>'; return }
-      const { data, error } = await supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-      if (error) { console.log('loadEducation error', error); return }
-      if (!data || data.length === 0) { document.getElementById('education-list').innerHTML = '<small>No education yet.</small>'; return }
-      const html = data.map(e => {
-        return `<div class="card" style="margin-bottom:8px;">
-          <strong>${escapeHtml(e.degree||'')}</strong> — ${escapeHtml(e.institution||'')}<br/>
-          <small>${e.start_date || ''} — ${e.end_date || ''}</small>
-          <p>${escapeHtml(e.notes||'')}</p>
-          <button data-id="${e.id}" class="btn-del-edu" style="background:#ef4444;color:#fff;border:0;padding:6px;border-radius:6px;">Delete</button>
-        </div>`
-      }).join('')
-      document.getElementById('education-list').innerHTML = html
-      document.querySelectorAll('.btn-del-edu').forEach(btn => {
-        btn.onclick = async (ev) => {
-          const id = ev.target.dataset.id
-          if (!confirm('Delete this education?')) return
-          const { error } = await supabaseClient.from('education').delete().eq('id', id)
-          if (error) alert('Delete error: ' + error.message)
-          else loadEducation()
-        }
-      })
-    }
-
-    // Add / refresh handlers
-    document.getElementById('btn-add-exp').onclick = async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) return alert('Login required')
-      const payload = {
-        user_id: user.id,
-        company: document.getElementById('exp-company').value || null,
-        title: document.getElementById('exp-title').value || null,
-        start_date: document.getElementById('exp-start').value || null,
-        end_date: document.getElementById('exp-end').value || null,
-        bullets: document.getElementById('exp-bullets').value || null
-      }
-      const { error } = await supabaseClient.from('experiences').insert(payload)
-      if (error) alert('Error: ' + error.message)
-      else { alert('Experience added'); await loadExperiences(); /* clear */ document.getElementById('exp-company').value=''; document.getElementById('exp-title').value=''; document.getElementById('exp-start').value=''; document.getElementById('exp-end').value=''; document.getElementById('exp-bullets').value=''; }
-    }
-    document.getElementById('btn-refresh-exps').onclick = loadExperiences
-
-    document.getElementById('btn-add-edu').onclick = async () => {
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if (!user) return alert('Login required')
-      const payload = {
-        user_id: user.id,
-        institution: document.getElementById('edu-institution').value || null,
-        degree: document.getElementById('edu-degree').value || null,
-        start_date: document.getElementById('edu-start').value || null,
-        end_date: document.getElementById('edu-end').value || null,
-        notes: document.getElementById('edu-notes').value || null
-      }
-      const { error } = await supabaseClient.from('education').insert(payload)
-      if (error) alert('Error: ' + error.message)
-      else { alert('Education added'); await loadEducation(); /* clear */ document.getElementById('edu-institution').value=''; document.getElementById('edu-degree').value=''; document.getElementById('edu-start').value=''; document.getElementById('edu-end').value=''; document.getElementById('edu-notes').value=''; }
-    }
-    document.getElementById('btn-refresh-edus').onclick = loadEducation
-
-    // ---------------- LLM Tailoring logic (user-supplied key in localStorage) ----------------
-    const apiKeyInput = document.getElementById('user-api-key')
-    const btnSaveKey = document.getElementById('btn-save-key')
-    const btnClearKey = document.getElementById('btn-clear-key')
-    const keyHint = document.getElementById('key-hint')
-    const llmStatus = document.getElementById('llm-status')
-    const llmOutput = document.getElementById('llm-output')
-
-    function saveKeyToBrowser(k){ if(!k) return; localStorage.setItem('user_llm_api_key', k.trim()); keyHint.textContent = 'API key saved in browser localStorage.'; apiKeyInput.value = '' }
-    function clearKeyFromBrowser(){ localStorage.removeItem('user_llm_api_key'); keyHint.textContent = 'Key cleared from browser.' }
-    function getKeyFromBrowser(){ return localStorage.getItem('user_llm_api_key') || null }
-
-    (function(){ const k = getKeyFromBrowser(); if(k){ apiKeyInput.placeholder = 'API key saved (not shown)'; keyHint.textContent = 'An API key is saved in this browser (use Clear Key to remove).'; } })()
-    btnSaveKey.onclick = ()=> { const v = apiKeyInput.value.trim(); if(!v){ alert('Paste your OpenAI API key (sk-...)'); return } saveKeyToBrowser(v) }
-    btnClearKey.onclick = ()=> { if(!confirm('Remove saved API key from this browser?')) return; clearKeyFromBrowser() }
-
-    document.getElementById('btn-print').onclick = () => {
-      const html = `<html><head><title>Tailored Resume</title></head><body style="font-family: Arial; padding:20px;">${llmOutput.innerHTML}</body></html>`
-      const w = window.open('', '_blank'); w.document.write(html); w.document.close(); w.focus(); w.print()
-    }
-    document.getElementById('btn-copy-output').onclick = async () => {
-      const text = llmOutput.innerText || llmOutput.textContent || ''; if(!text) return alert('No output to copy'); await navigator.clipboard.writeText(text); alert('Copied to clipboard')
-    }
-
-    async function buildPrompt(jobDescription){
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if(!user) throw new Error('Not authenticated')
-      const [profileRes, expsRes, edusRes] = await Promise.all([
-        supabaseClient.from('profiles').select('*').eq('id', user.id).single(),
-        supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending:false }),
-        supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending:false })
-      ])
-      const profile = profileRes?.data || null
-      const exps = expsRes?.data || []
-      const edus = edusRes?.data || []
-
-      let profileText = `Name: ${profile?.full_name || ''}\nLocation: ${profile?.location || ''}\nPhone: ${profile?.phone || ''}\nLinkedIn: ${profile?.linkedin || ''}\nGitHub: ${profile?.github || ''}\n\n`
-      let expText = 'Experience:\n'
-      if(exps && exps.length){ for(const e of exps){ expText += `- ${e.title || ''} at ${e.company || ''} (${e.start_date || ''} - ${e.end_date || 'Present'})\n`; if(e.bullets) expText += (e.bullets.split('\n').map(b => `  • ${b}`).join('\n')) + '\n' } } else expText += '- No experiences listed\n'
-      let eduText = 'Education:\n'
-      if(edus && edus.length){ for(const d of edus){ eduText += `- ${d.degree || ''} at ${d.institution || ''} (${d.start_date || ''} - ${d.end_date || ''})\n` } } else eduText += '- No education listed\n'
-
-      const prompt = `
-You are a professional resume-writer and ATS optimization specialist.
-The user will provide a Job Description (JD) and their profile + experiences + education.
-Your task: produce a concise, well-formatted, ATS-optimized tailored resume for this JD.
-- Start with a 2-3 sentence professional summary targeted to the JD.
-- Then list Experience bullets (3-6 per relevant role) prioritized by relevance to the JD.
-- Rewrite bullets to be accomplishment-driven, quantified when possible, start with strong action verbs, and include keywords from the JD.
-- Keep language concise, no fluff. Use consistent tense (past for previous roles, present for current).
-- Output in plain text with clear sections: Summary, Experience (role/company, dates, bullets), Education, Skills (if you can infer).
-- Include an "ATS keywords" short list at the end (5-12 keywords).
-Here is the user's profile and history:
-${profileText}
-${expText}
-${eduText}
-
-Here is the Job Description:
+Job Description:
 ${jobDescription}
 
-Produce the tailored resume now.
-      `.trim()
+Return the JSON now.
+  `.trim()
 
-      return prompt
-    }
+  return instruction
+}
 
-    async function callLLM(promptText){
-      const key = getKeyFromBrowser()
-      if(!key) throw new Error('Missing API key. Save your API key first.')
-      llmStatus.textContent = 'Calling LLM... (this may take a few seconds)'
-      llmOutput.textContent = ''
-      const model = 'gpt-4o-mini' // change if your key doesn't support
-      const body = { model, messages: [{ role: 'user', content: promptText }], max_tokens: 1000, temperature: 0.2 }
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify(body)
-      })
-      if(!resp.ok){
-        const text = await resp.text()
-        throw new Error(`LLM error ${resp.status}: ${text}`)
+async function callLLMAndRender(promptText) {
+  const key = localStorage.getItem('user_llm_api_key')
+  if (!key) throw new Error('Missing API key. Save your API key first.')
+  llmStatus.textContent = 'Calling LLM... (this may take 10–20s)'
+  llmOutput.textContent = ''
+
+  const body = {
+    model: 'gpt-4o-mini',    // change if needed
+    messages: [{ role: 'user', content: promptText }],
+    temperature: 0.1,
+    max_tokens: 1400
+  }
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify(body)
+  })
+
+  if (!resp.ok) {
+    const text = await resp.text()
+    throw new Error(`LLM error ${resp.status}: ${text}`)
+  }
+
+  const data = await resp.json()
+  const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text
+  if (!content) throw new Error('No content from LLM')
+
+  // Try to parse JSON only — model was instructed to return JSON
+  let parsed = null
+  try {
+    // Some models may return surrounding backticks; remove them
+    const cleaned = content.trim().replace(/^```json\s*/,'').replace(/```$/,'').trim()
+    parsed = JSON.parse(cleaned)
+  } catch (err) {
+    // If parse failed, show model output for debugging
+    llmStatus.textContent = 'LLM returned non-JSON. See console.'
+    llmOutput.textContent = content
+    console.error('Failed to parse JSON from LLM output:', content, err)
+    throw new Error('Failed to parse JSON from LLM output (check console)')
+  }
+
+  llmStatus.textContent = 'Rendering tailored resume...'
+  renderTailoredResume(parsed)
+  llmStatus.textContent = 'Done.'
+}
+
+// Render JSON into HTML that mirrors the PDF example
+function renderTailoredResume(obj) {
+  // build header
+  const container = document.getElementById('llm-output')
+  container.innerHTML = '' // clear
+  const wrapper = document.createElement('div')
+  wrapper.className = 'resume'
+
+  // Header: name/title + contact on right
+  const header = document.createElement('div'); header.className = 'header'
+  const left = document.createElement('div')
+  const name = document.createElement('h1'); name.textContent = obj.name || ''
+  const title = document.createElement('h2'); title.textContent = obj.title || ''
+  left.appendChild(name); left.appendChild(title)
+  const right = document.createElement('div'); right.className='contact'
+  if (obj.contact) {
+    const c = obj.contact
+    if (c.location) right.appendChild(Object.assign(document.createElement('div'),{textContent:c.location}))
+    const phoneLine = document.createElement('div'); phoneLine.textContent = (obj.contact.phone || '') + (obj.contact.email ? ` • ${obj.contact.email}` : '')
+    right.appendChild(phoneLine)
+    if (c.linkedin) right.appendChild(Object.assign(document.createElement('div'),{innerHTML:`<a href="${c.linkedin}" target="_blank" style="color:#9fe9f0">${c.linkedin}</a>`}))
+  }
+  header.appendChild(left); header.appendChild(right)
+  wrapper.appendChild(header)
+
+  // Summary
+  if (obj.summary) {
+    const ssec = document.createElement('div'); ssec.className='section'
+    ssec.innerHTML = `<h3>Summary</h3><div style="margin-top:8px">${escapeHtml(obj.summary)}</div>`
+    wrapper.appendChild(ssec)
+  }
+
+  // Experience
+  if (Array.isArray(obj.experience) && obj.experience.length) {
+    const esec = document.createElement('div'); esec.className='section'
+    esec.innerHTML = '<h3>Experience</h3>'
+    for (const e of obj.experience) {
+      const item = document.createElement('div'); item.className='exp-item'
+      const top = document.createElement('div'); top.className='top'
+      const leftTop = document.createElement('div')
+      const role = document.createElement('div'); role.className='role'; role.textContent = e.title || ''
+      const company = document.createElement('div'); company.className='company'; company.textContent = e.company || ''
+      leftTop.appendChild(role); leftTop.appendChild(company)
+      const dates = document.createElement('div'); dates.className='dates'; dates.textContent = e.dates || ''
+      top.appendChild(leftTop); top.appendChild(dates)
+      item.appendChild(top)
+      if (Array.isArray(e.bullets) && e.bullets.length) {
+        const ul = document.createElement('ul')
+        for (const b of e.bullets) {
+          const li = document.createElement('li'); li.innerHTML = escapeHtml(b)
+          ul.appendChild(li)
+        }
+        item.appendChild(ul)
       }
-      const data = await resp.json()
-      const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || JSON.stringify(data,null,2)
-      llmStatus.textContent = 'Done.'
-      return content
+      esec.appendChild(item)
     }
+    wrapper.appendChild(esec)
+  }
 
-    document.getElementById('btn-generate').onclick = async () => {
-      try{
-        const jd = document.getElementById('job-desc').value.trim(); if(!jd) return alert('Paste a job description first.')
-        llmStatus.textContent = 'Preparing prompt...'
-        const prompt = await buildPrompt(jd)
-        const out = await callLLM(prompt)
-        llmOutput.innerText = out
-      }catch(err){
-        console.error(err)
-        alert('Error: ' + (err.message || err))
-        llmStatus.textContent = 'Error: ' + (err.message || '')
+  // Education
+  if (Array.isArray(obj.education) && obj.education.length) {
+    const esec = document.createElement('div'); esec.className='section'
+    esec.innerHTML = '<h3>Education</h3>'
+    for (const d of obj.education) {
+      const div = document.createElement('div'); div.style.marginTop='8px'
+      const main = document.createElement('div'); main.innerHTML = `<strong>${escapeHtml(d.degree || '')}</strong> — ${escapeHtml(d.institution || '')}`
+      const dates = document.createElement('div'); dates.className='dates'; dates.textContent = d.dates || ''
+      div.appendChild(main); div.appendChild(dates)
+      if (d.notes) {
+        const p = document.createElement('div'); p.style.marginTop='6px'; p.textContent = d.notes
+        div.appendChild(p)
       }
+      esec.appendChild(div)
     }
+    wrapper.appendChild(esec)
+  }
 
-    // support paste+save with Enter
-    apiKeyInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter'){ e.preventDefault(); btnSaveKey.click() } })
-  </script>
-</body>
-</html>
+  // Skills & Certifications
+  const rightColumnItems = []
+  if (Array.isArray(obj.skills) && obj.skills.length) {
+    const s = document.createElement('div'); s.className='section'; s.innerHTML = '<h3>Skills</h3>'
+    s.innerHTML += `<div style="margin-top:8px">${obj.skills.map(x => `<span class="kv">${escapeHtml(x)}</span>`).join(' ')}</div>`
+    wrapper.appendChild(s)
+  }
+  if (Array.isArray(obj.certifications) && obj.certifications.length) {
+    const c = document.createElement('div'); c.className='section'; c.innerHTML = '<h3>Certifications</h3>'
+    c.innerHTML += `<div style="margin-top:8px">${obj.certifications.map(x => `<div class="kv">${escapeHtml(x)}</div>`).join('')}</div>`
+    wrapper.appendChild(c)
+  }
+
+  if (Array.isArray(obj.ats_keywords) && obj.ats_keywords.length) {
+    const a = document.createElement('div'); a.className='section'
+    a.innerHTML = '<h3>ATS keywords</h3><div class="ats">' + obj.ats_keywords.map(k => escapeHtml(k)).join(' • ') + '</div>'
+    wrapper.appendChild(a)
+  }
+
+  container.appendChild(wrapper)
+}
+
+// small helper like earlier
+function escapeHtml(s) { if (!s) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') }
+
+/* Hook up the Generate button to use the new functions.
+   Replace any old handler you had previously.
+*/
+document.getElementById('btn-generate').onclick = async () => {
+  try {
+    const jd = document.getElementById('job-desc').value.trim()
+    if (!jd) return alert('Paste a job description first.')
+    llmStatus.textContent = 'Preparing prompt...'
+    const prompt = await buildPromptJSON(jd)
+    await callLLMAndRender(prompt)
+  } catch (err) {
+    console.error(err)
+    alert('Error: ' + (err.message || err))
+    llmStatus.textContent = 'Error: ' + (err.message || '')
+  }
+}
+</script>
