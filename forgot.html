@@ -1,47 +1,45 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Forgot Password</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;color:#fff}
-    body{display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#0f3a37,#18c1b3);padding:48px}
-    .card{width:900px;max-width:96%;background:linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));padding:40px;border-radius:12px;box-shadow:0 30px 60px rgba(0,0,0,0.35);text-align:center}
-    h1{font-size:68px;margin:0 0 8px;font-weight:800}
-    p.lead{margin:0 0 18px;opacity:0.95}
-    label{display:block;font-size:12px;margin:8px 0 6px 0;letter-spacing:1px}
-    input{width:70%;max-width:720px;padding:18px;border-radius:999px;border:0;background:#fff;color:#1b6b66;font-weight:700;font-size:16px}
-    .btn{display:inline-block;margin-top:22px;padding:14px 28px;border-radius:34px;background:linear-gradient(180deg,#0fb1a7,#06d1c0);border:0;color:#012;font-weight:800;cursor:pointer}
-    a{display:block;margin-top:16px;color:#fff;text-decoration:underline}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Forgot Password — Resume Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;800&display=swap" rel="stylesheet">
+<style>
+  body{min-height:100vh;margin:0;background:linear-gradient(90deg,#0f4540,#12c4b8);display:flex;align-items:center;justify-content:center;padding:40px;font-family:Poppins,system-ui,Arial;color:#fff}
+  .wrap{width:100%;max-width:920px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:56px;border-radius:12px;box-shadow:0 30px 50px rgba(0,0,0,.35);text-align:center}
+  h1{font-size:56px;margin:0 0 6px;font-weight:800}
+  p.lead{opacity:.9;margin-bottom:36px}
+  label{display:block;font-size:12px;margin-bottom:10px;letter-spacing:.6px;font-weight:600}
+  input{width:80%;max-width:820px;padding:18px;border-radius:999px;border:none;outline:none;background:#fff;color:#333;font-weight:700}
+  .btn{margin-top:28px;padding:14px 32px;border-radius:999px;border:none;background:linear-gradient(180deg,#05bdb0,#00a09a);font-weight:800;cursor:pointer;color:#012;box-shadow:0 12px 24px rgba(6,90,84,0.25)}
+  .small-link{display:block;margin-top:22px;color:#fff;text-decoration:underline}
+  @media (max-width:700px){h1{font-size:40px}input{width:100%}}
+</style>
 </head>
 <body>
-  <div class="card">
+  <div class="wrap">
     <h1>Forgot Password</h1>
     <p class="lead">New Password</p>
 
-    <label>EMAIL</label>
-    <input id="fg-email" placeholder="YOUR EMAIL ADDRESS" />
+    <label for="email">Email</label>
+    <input id="email" type="email" placeholder="YOUR EMAIL ADDRESS" />
 
-    <div>
-      <button class="btn" id="btn-send">SEND</button>
-    </div>
-
-    <a href="login.html">Back to Login</a>
+    <div><button id="sendBtn" class="btn">SEND</button></div>
+    <a id="back" class="small-link" href="#">Back to Login</a>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
-  <script>
-    document.getElementById('btn-send').onclick = async () => {
-      const email = document.getElementById('fg-email').value.trim();
-      if (!email) return alert('Enter your email');
-      const { data, error } = await App.client.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login.html' });
-      if (error) return alert('Error: ' + error.message);
-      alert('Password reset requested — check your email.');
-      window.location.href = 'login.html';
-    };
-  </script>
+<script src="common.js"></script>
+<script>
+  document.getElementById('back').addEventListener('click', (e)=>{ e.preventDefault(); location.href='login.html' });
+  document.getElementById('sendBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('email').value.trim();
+    if (!email) return alert('Enter email');
+    // simulate send — in real app call supabase auth.resetPasswordForEmail(...)
+    alert('If this email is registered, you will receive a password reset link.');
+    location.href='login.html';
+  });
+  if (RB.isLoggedIn()) location.href='home.html';
+</script>
 </body>
 </html>

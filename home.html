@@ -1,77 +1,87 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Resume Builder — Home</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif}
-    body{background:linear-gradient(90deg,#0f3a37,#18c1b3);color:#fff;padding:36px;display:flex;align-items:flex-start;justify-content:center}
-    .container{width:980px;max-width:96%}
-    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .topbar h2{margin:0;font-size:20px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:28px;border-radius:12px;box-shadow:0 30px 60px rgba(0,0,0,0.35)}
-    .grid{display:grid;grid-template-columns:1fr 420px;gap:24px}
-    /* left large area reserved for illustration / profile summary */
-    .left{min-height:420px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:8px;padding:28px}
-    .illustration-placeholder{height:260px;background:rgba(255,255,255,0.03);border-radius:6px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5)}
-    .profilepre{background:rgba(0,0,0,0.06);padding:12px;border-radius:6px;margin-top:18px;color:rgba(255,255,255,0.85);font-family:monospace;font-size:13px;white-space:pre-wrap;overflow:auto;max-height:160px}
-    /* right form */
-    .section{margin-bottom:18px}
-    .section h3{margin:0 0 12px;font-weight:700}
-    label{display:block;font-size:12px;color:rgba(255,255,255,0.9);margin-bottom:8px}
-    input, textarea{width:100%;padding:10px;border-radius:8px;border:0;background:rgba(255,255,255,0.95);color:#0b2b27;font-weight:600}
-    .row{display:flex;gap:12px}
-    .row .col{flex:1}
-    .small-btn{background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;border:0;color:#fff;cursor:pointer}
-    .submit-wrap{text-align:right;margin-top:18px}
-    .btn-primary{padding:12px 22px;border-radius:20px;background:linear-gradient(180deg,#0fb1a7,#06d1c0);border:0;color:#012;font-weight:700;cursor:pointer}
-    .muted{color:rgba(255,255,255,0.75);font-size:13px;margin-top:12px}
-    .top-actions button{margin-left:10px}
-    .small-rounded{padding:8px 12px;border-radius:8px;border:0;background:#0b2b2a;color:#fff;cursor:pointer}
-    /* responsive */
-    @media (max-width:900px){
-      .grid{grid-template-columns:1fr; padding:0}
-      .submit-wrap{text-align:center}
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resume Builder — Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg1:#0f4540;--bg2:#12c4b8;--card:#0f3b36;--accent:#08b89f;--muted:#b9eae3}
+  *{box-sizing:border-box;font-family:Poppins,system-ui,Arial}
+  body{min-height:100vh;margin:0;background:linear-gradient(90deg,var(--bg1),var(--bg2));padding:40px;color:#fff}
+  .container{max-width:1100px;margin:0 auto}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  h1{margin:0;font-weight:800}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:22px;border-radius:12px;box-shadow:0 30px 50px rgba(0,0,0,.35)}
+  .layout{display:grid;grid-template-columns:1fr 420px;gap:24px}
+  .left-box{min-height:380px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:24px}
+  .right{padding:8px}
+  .section{margin-bottom:22px}
+  label{display:block;font-size:13px;margin-bottom:8px;color:#e9f8f5}
+  input{width:100%;padding:12px;border-radius:8px;border:none;outline:none;background:#fff;color:#333}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+  .btn-edit{background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.08)}
+  .btn-logout{background:#ff6b6b;color:#fff}
+  .smallbtn{background:rgba(255,255,255,0.04);color:#fff;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+  .submit{float:right;background:linear-gradient(180deg,#05bdb0,#00a09a);color:#012;padding:12px 18px;border-radius:12px;border:none;box-shadow:0 12px 24px rgba(6,90,84,0.2)}
+  .note{opacity:.85;font-size:13px;margin-top:18px}
+  .section-title{font-weight:700;margin-bottom:12px}
+  .add-btn{background:linear-gradient(180deg,#07bfae,#06a38f);padding:8px 12px;border-radius:8px;color:#012;border:none}
+  /* responsive */
+  @media (max-width:980px){.layout{grid-template-columns:1fr}.right{order:2}.left-box{order:1}}
+</style>
 </head>
 <body>
   <div class="container">
-    <div class="topbar">
-      <h2>Resume Builder — Home</h2>
-      <div class="top-actions">
-        <button id="btn-edit" class="small-rounded">Edit profile</button>
-        <button id="btn-logout" class="small-rounded" style="background:#ff6b6b">Logout</button>
+    <div class="top">
+      <div>
+        <h1>Resume Builder — Home</h1>
+        <div style="opacity:.9;font-size:13px">Not logged in</div>
+      </div>
+      <div>
+        <button id="editProfileBtn" class="btn btn-edit">Edit profile</button>
+        <button id="logoutBtn" class="btn btn-logout">Logout</button>
       </div>
     </div>
 
-    <div class="card grid">
-      <div class="left">
-        <div class="illustration-placeholder">ILLUSTRATION</div>
-        <div id="profileJSON" class="profilepre"></div>
+    <div class="card layout">
+      <div class="left-box">
+        <!-- left visual / preview area -->
+        <div style="height:220px;border-radius:8px;background:linear-gradient(180deg,#ffffff08,#ffffff03);display:flex;align-items:center;justify-content:center">
+          <svg width="160" height="100" viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="100" rx="8" fill="#ffffff11"/><rect x="14" y="22" width="132" height="18" rx="6" fill="#05bdb01f"/><rect x="24" y="44" width="112" height="40" rx="8" fill="#ffffff08"/></svg>
+        </div>
+
+        <div style="margin-top:18px">
+          <h3 style="margin:8px 0">Profile</h3>
+          <pre id="profileJson" style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;color:#dff7f0;overflow:auto;max-height:180px"></pre>
+          <p class="note">This is your home page. Use Edit profile to update details. When you submit resume it will be saved and you will see a preview here.</p>
+        </div>
       </div>
 
       <div class="right">
-        <div class="section">
-          <h3>1 — Contact information</h3>
-          <div class="row">
-            <div class="col">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="section-title">1 — Contact information</div>
+        </div>
+
+        <div class="card" style="padding:14px;background:transparent">
+          <div class="two section">
+            <div>
               <label>Full name *</label>
               <input id="full_name" placeholder="John Doe" />
             </div>
-            <div class="col">
+            <div>
               <label>Email *</label>
               <input id="email" placeholder="you@domain.com" />
             </div>
           </div>
 
-          <div class="row">
-            <div class="col">
+          <div class="two section">
+            <div>
               <label>Phone</label>
               <input id="phone" placeholder="+1 (555) 123-4567" />
             </div>
-            <div class="col">
+            <div>
               <label>Location</label>
               <input id="location" placeholder="City, Country" />
             </div>
@@ -81,156 +91,203 @@
             <label>LinkedIn (optional)</label>
             <input id="linkedin" placeholder="https://linkedin.com/..." />
           </div>
-        </div>
 
-        <div class="section">
-          <h3>2 — Work Experience</h3>
-          <button id="btn-add-work" class="small-btn">+ Add Work</button>
-          <div id="work-list" style="margin-top:12px;color:rgba(255,255,255,0.85)">No work entries yet.</div>
-        </div>
+          <div class="section">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="section-title">2 — Work Experience</div>
+              <button id="addWork" class="add-btn">+ Add Work</button>
+            </div>
+            <div id="workList" style="margin-top:10px"></div>
+          </div>
 
-        <div class="section">
-          <h3>3 — Education</h3>
-          <button id="btn-add-edu" class="small-btn">+ Add Education</button>
-          <div id="edu-list" style="margin-top:12px;color:rgba(255,255,255,0.85)">No education entries yet.</div>
-        </div>
+          <div class="section">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="section-title">3 — Education</div>
+              <button id="addEdu" class="add-btn">+ Add Education</button>
+            </div>
+            <div id="eduList" style="margin-top:10px"></div>
+          </div>
 
-        <div class="section">
-          <h3>4 — Certifications</h3>
-          <button id="btn-add-cert" class="small-btn">+ Add Cert</button>
-          <div id="cert-list" style="margin-top:12px;color:rgba(255,255,255,0.85)">No certifications yet.</div>
-        </div>
+          <div class="section">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="section-title">4 — Certifications</div>
+              <button id="addCert" class="add-btn">+ Add Cert</button>
+            </div>
+            <div id="certList" style="margin-top:10px"></div>
+          </div>
 
-        <div class="submit-wrap">
-          <button id="btn-submit" class="btn-primary">Submit</button>
+          <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;opacity:.9">All fields marked * are mandatory.</div>
+            <button id="submitBtn" class="submit">Submit</button>
+          </div>
         </div>
-
-        <div class="muted">All fields marked * are mandatory.</div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
-  <script src="common.js"></script>
-  <script>
-    // Home page logic: load profile, fill fields, show lists
-    (async function initHome(){
-      const user = await App.getUser();
-      if(!user){
-        // not logged in: redirect to login
-        window.location.href = 'login.html';
-        return;
-      }
-      document.querySelector('.topbar h2').textContent = 'Resume Builder — Home';
-      document.querySelector('#btn-logout').onclick = async () => {
-        await App.signOut();
+<script src="common.js"></script>
+<script>
+  // require login for home
+  if (!RB.isLoggedIn()) {
+    location.href = 'login.html';
+  }
+
+  const user = RB.getLoggedInUser();
+  const email = user?.email || '';
+
+  // elements
+  const profileJson = document.getElementById('profileJson');
+  const full_name = document.getElementById('full_name');
+  const emailEl = document.getElementById('email');
+  const phone = document.getElementById('phone');
+  const locationEl = document.getElementById('location');
+  const linkedin = document.getElementById('linkedin');
+  const workList = document.getElementById('workList');
+  const eduList = document.getElementById('eduList');
+  const certList = document.getElementById('certList');
+
+  // load profile if exists
+  const savedProfile = RB.loadUserProfile(email) || {};
+  if (savedProfile) {
+    full_name.value = savedProfile.full_name || '';
+    emailEl.value = email || '';
+    phone.value = savedProfile.phone || '';
+    locationEl.value = savedProfile.location || '';
+    linkedin.value = savedProfile.linkedin || '';
+  }
+
+  // load resume if exists
+  const savedResume = RB.loadResume(email);
+  if (savedResume) {
+    full_name.value = savedResume.full_name || full_name.value;
+    emailEl.value = savedResume.email || emailEl.value;
+    phone.value = savedResume.phone || phone.value;
+    locationEl.value = savedResume.location || locationEl.value;
+    linkedin.value = savedResume.linkedin || linkedin.value;
+    (savedResume.work_experiences || []).forEach(w => addWorkRow(w));
+    (savedResume.education_entries || []).forEach(e => addEduRow(e));
+    (savedResume.certifications || []).forEach(c => addCertRow(c));
+  }
+
+  // render JSON preview
+  function renderPreview() {
+    const preview = {
+      full_name: full_name.value,
+      email: emailEl.value,
+      phone: phone.value,
+      location: locationEl.value,
+      linkedin: linkedin.value
+    };
+    profileJson.textContent = JSON.stringify(preview, null, 2);
+  }
+  renderPreview();
+
+  // helpers to add rows
+  function addWorkRow(obj={company:'', title:'', dates:''}) {
+    const div = document.createElement('div');
+    div.style.marginBottom = '8px';
+    div.innerHTML = `<div style="display:flex;gap:8px"><input class="w1" placeholder="Company" value="${obj.company||''}" style="flex:2;padding:8px;border-radius:6px;border:none"/><input class="w2" placeholder="Title" value="${obj.title||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/><input class="w3" placeholder="Dates" value="${obj.dates||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/></div>`;
+    const rem = document.createElement('button');
+    rem.textContent = 'Remove';
+    rem.className = 'smallbtn';
+    rem.style.marginTop='8px';
+    rem.onclick = ()=>div.remove();
+    div.appendChild(rem);
+    workList.appendChild(div);
+  }
+  function addEduRow(obj={degree:'', institution:'', graduation:''}) {
+    const div = document.createElement('div');
+    div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;gap:8px"><input class="e1" placeholder="Degree" value="${obj.degree||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/><input class="e2" placeholder="Institution" value="${obj.institution||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/><input class="e3" placeholder="Graduation" value="${obj.graduation||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/></div>`;
+    const rem = document.createElement('button');
+    rem.textContent = 'Remove';
+    rem.className='smallbtn';
+    rem.style.marginTop='8px';
+    rem.onclick = ()=>div.remove();
+    div.appendChild(rem);
+    eduList.appendChild(div);
+  }
+  function addCertRow(obj={name:'', org:'', date:''}) {
+    const div = document.createElement('div');
+    div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;gap:8px"><input class="c1" placeholder="Name" value="${obj.name||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/><input class="c2" placeholder="Org" value="${obj.org||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/><input class="c3" placeholder="Date" value="${obj.date||''}" style="flex:1;padding:8px;border-radius:6px;border:none"/></div>`;
+    const rem = document.createElement('button');
+    rem.textContent = 'Remove';
+    rem.className='smallbtn'; rem.style.marginTop='8px';
+    rem.onclick = ()=>div.remove();
+    div.appendChild(rem);
+    certList.appendChild(div);
+  }
+
+  document.getElementById('addWork').addEventListener('click', ()=> addWorkRow());
+  document.getElementById('addEdu').addEventListener('click', ()=> addEduRow());
+  document.getElementById('addCert').addEventListener('click', ()=> addCertRow());
+
+  // submit / save resume
+  document.getElementById('submitBtn').addEventListener('click', ()=> {
+    const work = Array.from(workList.querySelectorAll('div')).map(div=>{
+      return {
+        company: (div.querySelector('.w1')||{value:''}).value.trim(),
+        title: (div.querySelector('.w2')||{value:''}).value.trim(),
+        dates: (div.querySelector('.w3')||{value:''}).value.trim()
       };
+    }).filter(x=>x.company || x.title || x.dates);
 
-      document.querySelector('#btn-edit').onclick = () => {
-        // focus the form (we are already on home)
-        document.querySelector('#full_name').focus();
-      }
-
-      // load profile row
-      const { data: profile, error } = await App.getProfile(user.id);
-      if(profile){
-        document.getElementById('full_name').value = App.esc(profile.full_name);
-        document.getElementById('phone').value = App.esc(profile.phone);
-        document.getElementById('location').value = App.esc(profile.location);
-        document.getElementById('linkedin').value = App.esc(profile.linkedin);
-        document.getElementById('email').value = user.email || '';
-        // show profile JSON for debugging (toggle)
-        document.getElementById('profileJSON').textContent = JSON.stringify(profile, null, 2);
-        document.getElementById('btn-submit').textContent = 'Edit profile';
-      } else {
-        document.getElementById('email').value = user.email || '';
-        document.getElementById('profileJSON').textContent = '// No profile data yet';
-        document.getElementById('btn-submit').textContent = 'Submit';
-      }
-
-      // load experiences + education lists (simple)
-      const exps = await App.listExperiences(user.id);
-      renderList('work-list', exps, 'experience');
-      const edus = await App.listEducation(user.id);
-      renderList('edu-list', edus, 'education');
-      document.getElementById('btn-add-work').onclick = addWork;
-      document.getElementById('btn-add-edu').onclick = addEducation;
-      document.getElementById('btn-add-cert').onclick = addCert;
-
-      document.getElementById('btn-submit').onclick = async () => {
-        const payload = {
-          id: user.id,
-          full_name: document.getElementById('full_name').value || null,
-          phone: document.getElementById('phone').value || null,
-          location: document.getElementById('location').value || null,
-          linkedin: document.getElementById('linkedin').value || null,
-          github: null
-        };
-        const { error } = await App.upsertProfile(payload);
-        if (error) return alert('Save error: '+ error.message);
-        alert('Profile saved');
-        // refresh JSON display
-        const { data } = await App.getProfile(user.id);
-        document.getElementById('profileJSON').textContent = JSON.stringify(data, null, 2);
-        document.getElementById('btn-submit').textContent = 'Edit profile';
+    const edu = Array.from(eduList.querySelectorAll('div')).map(div=>{
+      return {
+        degree: (div.querySelector('.e1')||{value:''}).value.trim(),
+        institution: (div.querySelector('.e2')||{value:''}).value.trim(),
+        graduation: (div.querySelector('.e3')||{value:''}).value.trim()
       };
+    }).filter(x=>x.degree || x.institution || x.graduation);
 
-      // helpers to render simple lists
-      function renderList(elId, items, type){
-        const el = document.getElementById(elId);
-        if(!items || items.length === 0){
-          el.innerHTML = `No ${type} entries yet.`;
-          return;
-        }
-        el.innerHTML = items.map(it => {
-          if(type === 'experience'){
-            return `<div style="margin-bottom:8px;padding:10px;background:rgba(0,0,0,0.06);border-radius:6px">
-              <strong>${it.title || '—'}</strong> at ${it.company || '—'}<br/><small>${it.start_date || ''} — ${it.end_date || 'Present'}</small>
-            </div>`;
-          } else {
-            return `<div style="margin-bottom:8px;padding:10px;background:rgba(0,0,0,0.06);border-radius:6px">
-              <strong>${it.degree || it.institution || '—'}</strong><br/><small>${it.start_date || ''} — ${it.end_date || ''}</small>
-            </div>`;
-          }
-        }).join('');
-      }
+    const certs = Array.from(certList.querySelectorAll('div')).map(div=>{
+      return {
+        name: (div.querySelector('.c1')||{value:''}).value.trim(),
+        org: (div.querySelector('.c2')||{value:''}).value.trim(),
+        date: (div.querySelector('.c3')||{value:''}).value.trim()
+      };
+    }).filter(x=>x.name || x.org || x.date);
 
-      // add simple modal-like prompts to create items quickly (developer convenience)
-      async function addWork(){
-        const company = prompt('Company name');
-        if(!company) return;
-        const title = prompt('Title/Role');
-        const start = prompt('Start date (e.g. 2020-01)');
-        const end = prompt('End date (optional)');
-        const { error } = await App.client.from('experiences').insert([{ user_id: user.id, company, title, start_date: start || null, end_date: end || null}]);
-        if(error) return alert('Add work error: ' + error.message);
-        const list = await App.listExperiences(user.id);
-        renderList('work-list', list, 'experience');
-      }
-      async function addEducation(){
-        const institution = prompt('Institution name');
-        if(!institution) return;
-        const degree = prompt('Degree (B.Tech, BSc, etc)');
-        const start = prompt('Start date (e.g. 2018)');
-        const end = prompt('End / Grad date (e.g. 2022)');
-        const { error } = await App.client.from('education').insert([{ user_id: user.id, institution, degree, start_date: start || null, end_date: end || null }]);
-        if(error) return alert('Add education error: ' + error.message);
-        const list = await App.listEducation(user.id);
-        renderList('edu-list', list, 'education');
-      }
-      async function addCert(){
-        const name = prompt('Certification name');
-        if(!name) return;
-        const org = prompt('Issuing organization');
-        const { error } = await App.client.from('certifications').insert([{ user_id: user.id, name, organization: org || null }]);
-        if(error) return alert('Add cert error: ' + error.message);
-        const { data } = await App.client.from('certifications').select('*').eq('user_id', user.id);
-        const el = document.getElementById('cert-list');
-        if(!data || data.length === 0) el.innerHTML = 'No certifications yet.';
-        else el.innerHTML = data.map(c => `<div style="margin-bottom:8px;padding:10px;background:rgba(0,0,0,0.06);border-radius:6px"><strong>${c.name}</strong><br/><small>${c.organization||''}</small></div>`).join('');
-      }
+    const payload = {
+      id: Date.now().toString(),
+      full_name: full_name.value.trim(),
+      email: emailEl.value.trim(),
+      phone: phone.value.trim(),
+      location: locationEl.value.trim(),
+      linkedin: linkedin.value.trim(),
+      work_experiences: work,
+      education_entries: edu,
+      certifications: certs,
+      created_at: new Date().toISOString()
+    };
 
-    })();
-  </script>
+    // save profile and resume
+    RB.saveUserProfile(email, { full_name: payload.full_name, phone: payload.phone, location: payload.location, linkedin: payload.linkedin, created_at: payload.created_at });
+    RB.saveResume(email, payload);
+
+    alert('Resume saved.');
+    renderPreview();
+  });
+
+  // edit profile button (go to a dedicated profile editor or the same form)
+  document.getElementById('editProfileBtn').addEventListener('click', ()=>{
+    // show the form already present; we can focus first field
+    full_name.focus();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    RB.logout();
+    location.href = 'login.html';
+  });
+
+  // update preview while typing
+  [full_name, emailEl, phone, locationEl, linkedin].forEach(el=>{
+    el.addEventListener('input', renderPreview);
+  });
+
+  // initial preview
+  renderPreview();
+</script>
 </body>
 </html>

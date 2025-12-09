@@ -1,62 +1,55 @@
-// common.js
-// Put this file in the same folder as your HTML files.
-// This exposes a global `App` object with helper functions used by each page.
+// common.js — shared helpers for auth + navigation + storage
+// load this from every page (put <script src="common.js"></script> before page-specific scripts)
 
-// --- CONFIG: set your Supabase values (already from your project) ---
-const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7';
+(function(global){
+  const APP_KEY = 'rb_app_v1';
 
-// Initialize client (assumes supabase UMD script loaded before this file)
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  function setLoggedIn(email) {
+    localStorage.setItem('rb_logged_in', JSON.stringify({ email }));
+  }
+  function logout() {
+    localStorage.removeItem('rb_logged_in');
+  }
+  function isLoggedIn() {
+    return !!localStorage.getItem('rb_logged_in');
+  }
+  function getLoggedInUser() {
+    return JSON.parse(localStorage.getItem('rb_logged_in') || 'null');
+  }
 
-// Simple helpers exposed on App
-window.App = {
-  client: supabaseClient,
+  // resume storage helpers
+  function saveUserProfile(email, profile) {
+    // store per-email
+    const all = JSON.parse(localStorage.getItem('rb_profiles') || '{}');
+    all[email] = profile;
+    localStorage.setItem('rb_profiles', JSON.stringify(all));
+  }
+  function loadUserProfile(email) {
+    const all = JSON.parse(localStorage.getItem('rb_profiles') || '{}');
+    return all[email] || null;
+  }
+  function saveResume(email, resume) {
+    const key = `rb_resume_${email}`;
+    localStorage.setItem(key, JSON.stringify(resume));
+  }
+  function loadResume(email) {
+    const key = `rb_resume_${email}`;
+    return JSON.parse(localStorage.getItem(key) || 'null');
+  }
 
-  // get current user (returns { user } similar to supabase)
-  async getUser() {
-    const { data } = await supabaseClient.auth.getUser();
-    return data?.user || null;
-  },
+  // simple nav guard
+  function requireLogin(redirectTo = 'login.html') {
+    if (!isLoggedIn()) {
+      location.href = redirectTo;
+      return false;
+    }
+    return true;
+  }
 
-  // on auth change (callback receives session)
-  onAuthChange(cb) {
-    supabaseClient.auth.onAuthStateChange((event, session) => cb(event, session));
-  },
-
-  // sign out
-  async signOut() {
-    await supabaseClient.auth.signOut();
-    window.location.href = 'login.html';
-  },
-
-  // upsert profile to 'profiles' table
-  async upsertProfile(payload) {
-    return await supabaseClient.from('profiles').upsert(payload, { returning: 'minimal' });
-  },
-
-  // get profile row by user id
-  async getProfile(userId) {
-    const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
-    return { data, error };
-  },
-
-  // navigate to home (used after login)
-  async gotoHome() {
-    window.location.href = 'home.html';
-  },
-
-  // convenience: fetch experiences list / education (basic)
-  async listExperiences(userId) {
-    const { data } = await supabaseClient.from('experiences').select('*').eq('user_id', userId).order('created_at', { ascending:false });
-    return data || [];
-  },
-
-  async listEducation(userId) {
-    const { data } = await supabaseClient.from('education').select('*').eq('user_id', userId).order('created_at', { ascending:false });
-    return data || [];
-  },
-
-  // small helper to format optional string
-  esc(s) { return s ? String(s) : ''; }
-};
+  global.RB = {
+    setLoggedIn, logout, isLoggedIn, getLoggedInUser,
+    saveUserProfile, loadUserProfile,
+    saveResume, loadResume,
+    requireLogin
+  };
+})(window);
