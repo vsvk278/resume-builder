@@ -1,329 +1,202 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Resume Builder — Home</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{
-      --bg1:#0f6b63; --bg2:#0fb8b0;
-      --card:#071c1b; --muted:#9fbfb8; --accent:#07b7a9;
-    }
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial}
-    body{
-      background: linear-gradient(135deg,var(--bg1) 0%, var(--bg2) 100%);
-      padding:40px;color:#fff;
-    }
-    .wrap{max-width:980px;margin:0 auto}
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      padding:26px;border-radius:12px;box-shadow:0 20px 50px rgba(2,20,18,0.35);
-    }
-    h2{margin:0 0 8px;font-size:20px}
-    .row{display:flex;gap:12px}
-    .col{flex:1}
-    label{display:block;font-size:12px;color:rgba(255,255,255,0.85);margin-bottom:8px}
-    input, textarea, select{
-      width:100%;padding:12px;border-radius:6px;border:0;background:rgba(255,255,255,0.95);color:#012;
-      margin-bottom:12px;font-size:14px;
-    }
-    .section{margin-bottom:18px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02)}
-    .actions{text-align:right}
-    .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:0;background:linear-gradient(#06b6d4,#059ea7);color:#012;font-weight:800;cursor:pointer}
-    .btn.ghost{background:rgba(255,255,255,0.06);color:#fff}
-    pre.json {background:#042a29;padding:12px;color:#bff3ef;border-radius:6px;overflow:auto}
-    .small{font-size:13px;color:rgba(255,255,255,0.85)}
-    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .profile-meta{color:rgba(255,255,255,0.95);font-weight:700}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resume Builder — Home</title>
+<style>
+  :root{--bg1:#071b1a; --bg2:#0fb49d; --card:#0b3c39cc; --accent:#06b6d4; --muted:rgba(255,255,255,0.75)}
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, Arial, sans-serif}
+  body{
+    background:linear-gradient(120deg,#0b3e3b 0%, #0fb49d 100%);
+    padding:40px; box-sizing:border-box;
+  }
+  .container{max-width:980px;margin:0 auto}
+  .header{display:flex; align-items:center; justify-content:space-between; color:white; margin-bottom:18px}
+  .title{font-weight:800;font-size:20px}
+  .toolbar{display:flex; gap:10px}
+  .btn{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700}
+  .btn-edit{background:#06b6d4;color:#042}
+  .btn-logout{background:#ef4444;color:white}
+
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border-radius:12px;padding:22px; box-shadow: 0 20px 40px rgba(2,8,23,0.45); color:white;
+  }
+
+  h2{margin:0 0 10px 0}
+  .hint{color:var(--muted); margin-bottom:12px}
+
+  label{display:block;font-size:13px;color:rgba(255,255,255,0.85); margin-top:14px}
+  input[type="text"], input[type="email"], textarea{
+    width:100%; padding:12px 14px; border-radius:6px; border:none; margin-top:6px; font-weight:600;
+    background: rgba(255,255,255,0.95); color:#082; box-shadow: 0 6px 14px rgba(2,8,23,0.08)
+  }
+
+  .two{display:flex; gap:12px}
+  .two > *{flex:1}
+
+  .actions{display:flex; justify-content:flex-end; gap:12px; margin-top:20px}
+  .btn-primary{background:linear-gradient(180deg,#06b6d4,#00a58f); color:#042; padding:10px 16px; border-radius:8px}
+
+  pre.profile-json{background:#082d2a; color:#cde; padding:12px; border-radius:6px; overflow:auto; max-height:220px}
+
+  /* responsive */
+  @media (max-width:860px){
+    .two{flex-direction:column}
+    .header{flex-direction:column; align-items:flex-start; gap:12px}
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="profile-meta">
-        <div style="font-size:18px;font-weight:900">Resume Builder — Home</div>
-        <div id="logged-as" style="font-size:13px;color:rgba(255,255,255,0.85)">Not logged in</div>
-      </div>
+  <div class="container">
+    <div class="header">
       <div>
-        <button id="btn-edit" class="btn">Edit profile</button>
-        <button id="btn-logout" class="btn ghost">Logout</button>
+        <div class="title">Resume Builder — Home</div>
+        <div class="hint" id="login-status">Checking login...</div>
+      </div>
+      <div class="toolbar">
+        <button id="btn-edit" class="btn btn-edit">Edit profile</button>
+        <button id="btn-logout" class="btn btn-logout">Logout</button>
       </div>
     </div>
 
     <div class="card">
-      <!-- Contact -->
-      <div class="section">
-        <h3 style="margin-top:0">1 — Contact information</h3>
+      <h2>Profile</h2>
+      <div class="hint">Fill contact information, work experience & education — or edit an existing profile.</div>
 
-        <div class="row">
-          <div class="col">
-            <label>Full name *</label>
-            <input id="full_name" />
-          </div>
-          <div class="col">
+      <form id="profile-form">
+        <label>Full name *</label>
+        <input id="full_name" type="text" placeholder="Full name" required />
+
+        <div class="two">
+          <div>
             <label>Email *</label>
-            <input id="contact_email" type="email" />
+            <input id="email" type="email" placeholder="you@domain.com" required/>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="col">
+          <div>
             <label>Phone</label>
-            <input id="phone" />
-          </div>
-          <div class="col">
-            <label>Location</label>
-            <input id="location" />
+            <input id="phone" type="text" placeholder="+91 98765..." />
           </div>
         </div>
 
-        <label>LinkedIn (optional)</label>
-        <input id="linkedin" placeholder="https://linkedin.com/..." />
-      </div>
+        <label>Location</label>
+        <input id="location" type="text" placeholder="City, Country" />
 
-      <!-- Experience -->
-      <div class="section" id="experience-section">
-        <h3>2 — Work Experience <button id="add-exp" class="btn ghost" style="float:right">+ Add Work</button></h3>
-        <div id="exps-container"></div>
-      </div>
+        <label>LinkedIn</label>
+        <input id="linkedin" type="text" placeholder="https://linkedin.com/..." />
 
-      <!-- Education -->
-      <div class="section" id="education-section">
-        <h3>3 — Education <button id="add-edu" class="btn ghost" style="float:right">+ Add Education</button></h3>
-        <div id="edus-container"></div>
-      </div>
+        <label>GitHub</label>
+        <input id="github" type="text" placeholder="https://github.com/..." />
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-        <div class="small">All fields marked * are mandatory</div>
         <div class="actions">
-          <button id="btn-submit" class="btn">Submit</button>
-          <button id="btn-save" class="btn" style="display:none">Save</button>
+          <button type="button" id="btn-submit" class="btn-primary btn">Submit</button>
         </div>
-      </div>
+      </form>
 
-      <div id="status" style="margin-top:10px"></div>
+      <hr style="margin:18px 0;border:none;border-top:1px solid rgba(255,255,255,0.04)">
+
+      <h3>Raw profile (for debugging)</h3>
+      <pre id="raw" class="profile-json">Not loaded yet.</pre>
+      <div style="margin-top:10px;color:rgba(255,255,255,0.8)">Notes: If you already saved your profile the form will be pre-filled and the Submit button will update changes.</div>
     </div>
   </div>
 
-  <!-- Supabase -->
+  <!-- supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
   <script>
+    // === use your supabase values (match index.html) ===
     const SUPABASE_URL = 'https://aisuwbgwhvbikdvoming.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_OZ2XcYvyUC3cpTUPUXhTig_bH_U1QO7'
+    // =====================================================
+
     const { createClient } = supabase
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    // UI elements
-    const loggedAs = document.getElementById('logged-as')
-    const btnLogout = document.getElementById('btn-logout')
-    const btnEdit = document.getElementById('btn-edit')
+    const loginStatus = document.getElementById('login-status')
+    const raw = document.getElementById('raw')
+    const form = document.getElementById('profile-form')
     const btnSubmit = document.getElementById('btn-submit')
-    const btnSave = document.getElementById('btn-save')
-    const status = document.getElementById('status')
+    const btnEdit = document.getElementById('btn-edit')
+    const btnLogout = document.getElementById('btn-logout')
 
-    const full_name = document.getElementById('full_name')
-    const contact_email = document.getElementById('contact_email')
-    const phone = document.getElementById('phone')
-    const locationEl = document.getElementById('location')
-    const linkedin = document.getElementById('linkedin')
-
-    const expsContainer = document.getElementById('exps-container')
-    const edusContainer = document.getElementById('edus-container')
-
-    // add one empty exp UI entry
-    function makeExpRow(data = {}) {
-      const wrapper = document.createElement('div')
-      wrapper.style.padding='12px'; wrapper.style.border='1px solid rgba(255,255,255,0.03)'; wrapper.style.marginBottom='10px'; wrapper.style.borderRadius='8px'
-      wrapper.innerHTML = `
-        <div class="row">
-          <div class="col"><label>Company</label><input class="exp-company" value="${escapeHtml(data.company||'')}" /></div>
-          <div class="col"><label>Title</label><input class="exp-title" value="${escapeHtml(data.title||'')}" /></div>
-        </div>
-        <div class="row">
-          <div class="col"><label>Start</label><input class="exp-start" value="${escapeHtml(data.start_date||'')}" /></div>
-          <div class="col"><label>End</label><input class="exp-end" value="${escapeHtml(data.end_date||'')}" /></div>
-        </div>
-        <label>Bullets (one per line)</label>
-        <textarea class="exp-bullets" rows="3">${escapeHtml(data.bullets||'')}</textarea>
-        <div style="text-align:right"><button class="del-exp btn ghost">Delete</button></div>
-      `
-      wrapper.querySelector('.del-exp').onclick = ()=> { wrapper.remove() }
-      return wrapper
+    // utility to get current user
+    async function getUser(){
+      const { data } = await sb.auth.getUser()
+      return data.user || null
     }
 
-    function makeEduRow(data = {}) {
-      const wrapper = document.createElement('div')
-      wrapper.style.padding='12px'; wrapper.style.border='1px solid rgba(255,255,255,0.03)'; wrapper.style.marginBottom='10px'; wrapper.style.borderRadius='8px'
-      wrapper.innerHTML = `
-        <div class="row">
-          <div class="col"><label>Institution</label><input class="edu-institution" value="${escapeHtml(data.institution||'')}" /></div>
-          <div class="col"><label>Degree</label><input class="edu-degree" value="${escapeHtml(data.degree||'')}" /></div>
-        </div>
-        <div class="row">
-          <div class="col"><label>Start</label><input class="edu-start" value="${escapeHtml(data.start_date||'')}" /></div>
-          <div class="col"><label>End</label><input class="edu-end" value="${escapeHtml(data.end_date||'')}" /></div>
-        </div>
-        <div style="text-align:right"><button class="del-edu btn ghost">Delete</button></div>
-      `
-      wrapper.querySelector('.del-edu').onclick = ()=> { wrapper.remove() }
-      return wrapper
-    }
-
-    // escape
-    function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
-
-    // add handlers
-    document.getElementById('add-exp').onclick = ()=> expsContainer.appendChild(makeExpRow())
-    document.getElementById('add-edu').onclick = ()=> edusContainer.appendChild(makeEduRow())
-
-    // logout
-    btnLogout.onclick = async ()=>{
-      await supabase.auth.signOut()
-      location.href = 'login.html'
-    }
-
-    // Edit / Submit toggle
-    btnEdit.onclick = ()=> enableEdit(true)
-
-    async function enableEdit(on){
-      // if on -> show editable inputs and Save button
-      if(on){
-        btnSave.style.display='inline-block'
-        btnSubmit.style.display='none'
-        btnEdit.style.display='none'
-      } else {
-        btnSave.style.display='none'
-        btnSubmit.style.display='inline-block'
-        btnEdit.style.display='inline-block'
-      }
-    }
-
-    // Save (edit mode)
-    btnSave.onclick = async ()=>{
-      await submitForm({update:true})
-    }
-
-    // initial submit
-    btnSubmit.onclick = async ()=>{
-      await submitForm({update:false})
-    }
-
-    // build payload & send to supabase
-    async function submitForm({update=false}){
-      status.textContent = 'Saving...'
-      const { data: { user } } = await supabase.auth.getUser()
-      if(!user){ status.textContent = 'Not authenticated'; return location.href = 'login.html' }
-
-      // upsert profile (basic contact)
-      const profilePayload = {
-        id: user.id,
-        full_name: full_name.value || null,
-        phone: phone.value || null,
-        location: locationEl.value || null,
-        linkedin: linkedin.value || null,
-        // Use contact_email as primary email too
-      }
-      const { error: pErr } = await supabase.from('profiles').upsert(profilePayload, { returning: 'minimal' })
-      if(pErr){ status.textContent = 'Profile error: ' + pErr.message; return console.error(pErr) }
-
-      // experiences: collect rows
-      const exps = []
-      expsContainer.querySelectorAll('div').forEach(row => {
-        const company = row.querySelector('.exp-company')?.value || ''
-        const title = row.querySelector('.exp-title')?.value || ''
-        const start_date = row.querySelector('.exp-start')?.value || ''
-        const end_date = row.querySelector('.exp-end')?.value || ''
-        const bullets = row.querySelector('.exp-bullets')?.value || ''
-        if(company || title) exps.push({ user_id: user.id, company, title, start_date, end_date, bullets })
-      })
-
-      // education: collect
-      const edus = []
-      edusContainer.querySelectorAll('div').forEach(row => {
-        const institution = row.querySelector('.edu-institution')?.value || ''
-        const degree = row.querySelector('.edu-degree')?.value || ''
-        const start_date = row.querySelector('.edu-start')?.value || ''
-        const end_date = row.querySelector('.edu-end')?.value || ''
-        if(institution || degree) edus.push({ user_id: user.id, institution, degree, start_date, end_date })
-      })
-
-      // insert experiences (simple approach): delete existing then insert fresh to keep sync
-      if(exps.length>0){
-        // delete existing exps for user then insert
-        const { error: dErr } = await supabase.from('experiences').delete().eq('user_id', user.id)
-        if(dErr){ console.warn('delete exps error', dErr) }
-        const { error: iErr } = await supabase.from('experiences').insert(exps)
-        if(iErr){ status.textContent = 'Experiences error: ' + iErr.message; return console.error(iErr) }
-      }
-
-      // same for education
-      if(edus.length>0){
-        const { error: dErr } = await supabase.from('education').delete().eq('user_id', user.id)
-        if(dErr){ console.warn('delete edus error', dErr) }
-        const { error: iErr } = await supabase.from('education').insert(edus)
-        if(iErr){ status.textContent = 'Education error: ' + iErr.message; return console.error(iErr) }
-      }
-
-      status.textContent = 'Saved.'
-      // after save, show non-edit mode
-      enableEdit(false)
-      loadProfile() // refresh UI
-    }
-
-    // Load profile + exps + edus
+    // load profile if exists
     async function loadProfile(){
-      const { data: { user } } = await supabase.auth.getUser()
-      if(!user) return location.href='login.html'
-      loggedAs.textContent = 'Logged in as ' + (user.email || user.user_metadata?.email || '')
-      // profile
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single().catch(()=>({data:null}))
-      if(profile?.full_name) full_name.value = profile.full_name
-      if(profile?.phone) phone.value = profile.phone
-      if(profile?.location) locationEl.value = profile.location
-      if(profile?.linkedin) linkedin.value = profile.linkedin
-
-      // experiences
-      const { data: experiences } = await supabase.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending:false }).catch(()=>({data:[]}))
-      expsContainer.innerHTML = ''
-      if(experiences && experiences.length){
-        experiences.forEach(e => expsContainer.appendChild(makeExpRow(e)))
-      } else {
-        expsContainer.appendChild(makeExpRow())
-      }
-
-      // education
-      const { data: edus } = await supabase.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending:false }).catch(()=>({data:[]}))
-      edusContainer.innerHTML = ''
-      if(edus && edus.length){
-        edus.forEach(d => edusContainer.appendChild(makeEduRow(d)))
-      } else {
-        edusContainer.appendChild(makeEduRow())
-      }
-
-      // decide if user is existing: check if experiences or education rows exist OR profile.full_name present
-      const isExisting = (experiences && experiences.length>0) || (edus && edus.length>0) || !!(profile && profile.full_name)
-      if(isExisting){
-        // hide submit, show Edit button
-        btnSubmit.style.display='none'
-        btnSave.style.display='none'
-        btnEdit.style.display='inline-block'
-      } else {
-        btnSubmit.style.display='inline-block'
-        btnEdit.style.display='none'
-        btnSave.style.display='none'
-      }
-    }
-
-    // run on load
-    (async ()=>{
-      const { data: { user } } = await supabase.auth.getUser()
-      if(!user) {
-        // check if session exists — getUser returns user only when logged in; redirect to login
-        location.href='login.html'
+      const user = await getUser()
+      if(!user){
+        loginStatus.textContent = 'Not logged in'
+        raw.textContent = 'No user session. Please login (back at index.html).'
+        // optionally redirect to login page
+        // location.href = 'index.html'
         return
       }
-      await loadProfile()
-    })()
+      loginStatus.textContent = 'Logged in as ' + user.email
+      // attempt to read profiles table where id = user's id
+      const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single()
+      if(error && error.code !== 'PGRST116'){
+        raw.textContent = 'Error loading profile: ' + JSON.stringify(error)
+        return
+      }
+      if(!data){
+        raw.textContent = 'No profile saved yet for this user.'
+        // keep form blank but fill email
+        document.getElementById('email').value = user.email
+        btnSubmit.textContent = 'Submit'
+        return
+      }
+      // fill form
+      document.getElementById('full_name').value = data.full_name || ''
+      document.getElementById('email').value = user.email || ''
+      document.getElementById('phone').value = data.phone || ''
+      document.getElementById('location').value = data.location || ''
+      document.getElementById('linkedin').value = data.linkedin || ''
+      document.getElementById('github').value = data.github || ''
+      btnSubmit.textContent = 'Save changes'
+      raw.textContent = JSON.stringify(data, null, 2)
+    }
+
+    // save/update profile
+    btnSubmit.addEventListener('click', async ()=>{
+      const user = await getUser()
+      if(!user){ alert('Not authenticated — please login'); return }
+      const payload = {
+        id: user.id,
+        full_name: document.getElementById('full_name').value || null,
+        phone: document.getElementById('phone').value || null,
+        location: document.getElementById('location').value || null,
+        linkedin: document.getElementById('linkedin').value || null,
+        github: document.getElementById('github').value || null
+      }
+      btnSubmit.disabled = true; btnSubmit.textContent = 'Saving...'
+      const { error } = await sb.from('profiles').upsert(payload, { returning: 'representation' })
+      btnSubmit.disabled = false
+      if(error){ alert('Save error: ' + error.message); btnSubmit.textContent = 'Retry' }
+      else { alert('Profile saved'); btnSubmit.textContent = 'Save changes'; loadProfile() }
+    })
+
+    // edit button just focuses the form (we keep same page)
+    btnEdit.addEventListener('click', ()=> window.scrollTo({top:0,behavior:'smooth'}))
+
+    // logout
+    btnLogout.addEventListener('click', async ()=>{
+      await sb.auth.signOut()
+      alert('Signed out')
+      location.href = 'index.html'
+    })
+
+    // auth state change: if user logs out from another tab redirect to index
+    sb.auth.onAuthStateChange((event, session) => {
+      if(!session || !session.user) location.href = 'index.html'
+    })
+
+    // initial load
+    (async ()=>{ await loadProfile() })()
   </script>
 </body>
 </html>
