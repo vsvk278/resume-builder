@@ -286,47 +286,68 @@
       const text = llmOutput.innerText || llmOutput.textContent || ''; if(!text) return alert('No output to copy'); await navigator.clipboard.writeText(text); alert('Copied to clipboard')
     }
 
-    async function buildPrompt(jobDescription){
-      const { data: { user } } = await supabaseClient.auth.getUser()
-      if(!user) throw new Error('Not authenticated')
-      const [profileRes, expsRes, edusRes] = await Promise.all([
-        supabaseClient.from('profiles').select('*').eq('id', user.id).single(),
-        supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending:false }),
-        supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending:false })
-      ])
-      const profile = profileRes?.data || null
-      const exps = expsRes?.data || []
-      const edus = edusRes?.data || []
+    // REPLACE your existing buildPrompt with this function
+async function buildPrompt(jobDescription){
+  // gather user info from supabaseClient (same as before)
+  const { data: { user } } = await supabaseClient.auth.getUser()
+  if(!user) throw new Error('Not authenticated')
 
-      let profileText = `Name: ${profile?.full_name || ''}\nLocation: ${profile?.location || ''}\nPhone: ${profile?.phone || ''}\nLinkedIn: ${profile?.linkedin || ''}\nGitHub: ${profile?.github || ''}\n\n`
-      let expText = 'Experience:\n'
-      if(exps && exps.length){ for(const e of exps){ expText += `- ${e.title || ''} at ${e.company || ''} (${e.start_date || ''} - ${e.end_date || 'Present'})\n`; if(e.bullets) expText += (e.bullets.split('\n').map(b => `  • ${b}`).join('\n')) + '\n' } } else expText += '- No experiences listed\n'
-      let eduText = 'Education:\n'
-      if(edus && edus.length){ for(const d of edus){ eduText += `- ${d.degree || ''} at ${d.institution || ''} (${d.start_date || ''} - ${d.end_date || ''})\n` } } else eduText += '- No education listed\n'
+  const [profileRes, expsRes, edusRes] = await Promise.all([
+    supabaseClient.from('profiles').select('*').eq('id', user.id).single(),
+    supabaseClient.from('experiences').select('*').eq('user_id', user.id).order('created_at', { ascending:false }),
+    supabaseClient.from('education').select('*').eq('user_id', user.id).order('created_at', { ascending:false })
+  ])
 
-      const prompt = `
-You are a professional resume-writer and ATS optimization specialist.
-The user will provide a Job Description (JD) and their profile + experiences + education.
-Your task: produce a concise, well-formatted, ATS-optimized tailored resume for this JD.
-- Start with a 2-3 sentence professional summary targeted to the JD.
-- Then list Experience bullets (3-6 per relevant role) prioritized by relevance to the JD.
-- Rewrite bullets to be accomplishment-driven, quantified when possible, start with strong action verbs, and include keywords from the JD.
-- Keep language concise, no fluff. Use consistent tense (past for previous roles, present for current).
-- Output in plain text with clear sections: Summary, Experience (role/company, dates, bullets), Education, Skills (if you can infer).
-- Include an "ATS keywords" short list at the end (5-12 keywords).
-Here is the user's profile and history:
+  const profile = profileRes?.data || {}
+  const exps = expsRes?.data || []
+  const edus = edusRes?.data || []
+
+  // Build user text blocks (same as before)
+  let profileText = `Name: ${profile.full_name || ''}\nLocation: ${profile.location || ''}\nPhone: ${profile.phone || ''}\nLinkedIn: ${profile.linkedin || ''}\nGitHub: ${profile.github || ''}\n\n`
+  let expText = 'Experience:\n'
+  if(exps.length){
+    for(const e of exps){
+      expText += `- ${e.title || ''} at ${e.company || ''} (${e.start_date || ''} - ${e.end_date || 'Present'})\n`
+      if(e.bullets) expText += e.bullets.split('\n').map(b => `  • ${b}`).join('\n') + '\n'
+    }
+  } else expText += '- No experiences listed\n'
+
+  let eduText = 'Education:\n'
+  if(edus.length){
+    for(const d of edus){
+      eduText += `- ${d.degree || ''} at ${d.institution || ''} (${d.start_date || ''} - ${d.end_date || ''})\n`
+    }
+  } else eduText += '- No education listed\n'
+
+  // --- Strong, structured prompt that references the PDF example style ---
+  const prompt = `
+You are an expert professional resume writer and an ATS (Applicant Tracking System) optimizer.
+
+Use the user's profile and history (below) and the Job Description provided to produce a single **tailored, ATS-friendly resume** that:
+  1. Follows the concise structure, tone and detail level of the example resume provided (use it as the style reference).
+  2. Uses a clear order and headings: Summary, Experience (role — company, dates, 3–6 bullets per relevant role), Education, Skills / Core Competencies, Certifications.
+  3. Rewrites bullets to be accomplishment-driven, begins with strong action verbs, quantifies where possible, and includes keywords from the Job Description.
+  4. Keeps the output plain-text (or markdown) with readable line breaks and bullet points suitable for copying to a resume file.
+  5. At the end, provide a short "ATS keywords" list (5–12 keywords) extracted from the JD and resume.
+
+**Important style example**: match the formatting, section order and level of detail of the uploaded resume example (DevOps Engineer sample). Use it as a style and phrasing reference when deciding how many bullets and how descriptive those bullets should be. Example file (style reference): :contentReference[oaicite:0]{index=0}
+
+--- USER PROFILE & HISTORY ---
 ${profileText}
 ${expText}
 ${eduText}
 
-Here is the Job Description:
+--- JOB DESCRIPTION ---
 ${jobDescription}
 
-Produce the tailored resume now.
-      `.trim()
+Produce the tailored resume now. Start with a 2–3 sentence targeted professional summary. Then Experience -> Education -> Skills -> Certifications (if any). Finally list "ATS keywords:" with comma-separated keywords.
 
-      return prompt
-    }
+Output only the tailored resume (no commentary).
+  `.trim()
+
+  return prompt
+}
+
 
     async function callLLM(promptText){
       const key = getKeyFromBrowser()
