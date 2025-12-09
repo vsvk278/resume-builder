@@ -1,12 +1,39 @@
-<!-- After UMD + common.js -->
-<script src="common.js"></script>
+<!-- robust page wiring (drop-in replacement for your script) -->
 <script>
 (async function(){
-  // require auth or go to login
-  const user = await Common.requireAuthOrRedirect('login.html');
-  if (!user) return;
+  // robust getUser normalization helper
+  function normalizeUser(resp) {
+    if (!resp) return null;
+    if (resp.user) return resp.user;
+    if (resp.data && resp.data.user) return resp.data.user;
+    if (resp.data && resp.data.id) return resp.data; // maybe profile-like
+    if (resp.id) return resp; // already a user object
+    return null;
+  }
 
-  // helper to find input by id (tries different candidates)
+  // call requireAuthOrRedirect and normalize
+  let authResp;
+  try {
+    if (!window.Common || typeof Common.requireAuthOrRedirect !== 'function') {
+      console.error('Common.requireAuthOrRedirect missing. Make sure common.js is loaded and exposes this function.');
+      // If Common missing, redirect to login to avoid blank page:
+      // window.location.href = 'login.html';
+      return;
+    }
+    authResp = await Common.requireAuthOrRedirect('login.html');
+  } catch (err) {
+    console.error('requireAuthOrRedirect threw:', err);
+    return;
+  }
+
+  const user = normalizeUser(authResp);
+  if (!user) {
+    // assume requireAuthOrRedirect redirected the user already
+    console.warn('No authenticated user found (requireAuthOrRedirect returned empty).');
+    return;
+  }
+
+  // helper to find input by id/name
   const $ = (ids) => {
     if (!Array.isArray(ids)) ids = [ids];
     for (const id of ids) {
@@ -23,12 +50,24 @@
   const locationEl = $( ['location'] );
   const linkedinEl = $( ['linkedin'] );
 
-  // load profile from DB if exists
-  const { data: profile, error: pErr } = await Common.getProfileById(user.id);
-  if (pErr) console.log('profile load error', pErr);
+  // --- load profile (robust) ---
+  let profile = null;
+  try {
+    if (typeof Common.getProfileById === 'function') {
+      const res = await Common.getProfileById(user.id);
+      // normalise: res may be { data: {...}, error } or the profile directly
+      profile = res && (res.data || res.profile || res) ;
+      if (res && res.error) console.warn('getProfileById returned error:', res.error);
+    } else {
+      console.warn('Common.getProfileById not found (skipping profile load).');
+    }
+  } catch (err) {
+    console.error('getProfileById failed:', err);
+  }
 
+  // Populate fields if profile exists; otherwise prefill email from auth user
   if (profile) {
-    if (fullNameEl) fullNameEl.value = profile.full_name || '';
+    if (fullNameEl) fullNameEl.value = profile.full_name || profile.name || '';
     if (emailEl) emailEl.value = profile.email || user.email || '';
     if (phoneEl) phoneEl.value = profile.phone || '';
     if (locationEl) locationEl.value = profile.location || '';
@@ -37,20 +76,39 @@
     if (emailEl) emailEl.value = user.email || '';
   }
 
-  // load experiences & education into small UI lists if you have containers with these ids
+  // --- load experiences & education into UI lists (if containers present) ---
   const workContainer = document.getElementById('experiences-list') || document.getElementById('work-list') || document.getElementById('workList');
   const eduContainer = document.getElementById('education-list') || document.getElementById('edu-list') || document.getElementById('eduList');
 
+  async function safeListExperiences(uid) {
+    if (typeof Common.listExperiences === 'function') {
+      try {
+        const r = await Common.listExperiences(uid);
+        return r && (r.data || r) || [];
+      } catch(err) { console.error('listExperiences error', err); return []; }
+    }
+    return [];
+  }
+  async function safeListEducation(uid) {
+    if (typeof Common.listEducation === 'function') {
+      try {
+        const r = await Common.listEducation(uid);
+        return r && (r.data || r) || [];
+      } catch(err) { console.error('listEducation error', err); return []; }
+    }
+    return [];
+  }
+
   if (workContainer) {
-    const { data: exps, error } = await Common.listExperiences(user.id);
-    if (error) console.log('exps load err', error);
+    const exps = await safeListExperiences(user.id);
     workContainer.innerHTML = '';
     if (exps && exps.length) {
       exps.forEach(e => {
         const div = document.createElement('div');
         div.className = 'card';
         div.style.marginBottom = '8px';
-        div.innerHTML = `<strong>${e.title||''}</strong> — ${e.company||''}<br/><small>${e.start_date||''} - ${e.end_date||'Present'}</small>`;
+        const bullets = (e.bullets || '').split('\n').map(b => `<li>${(b||'').replace(/</g,'&lt;')}</li>`).join('');
+        div.innerHTML = `<strong>${e.title||''}</strong> — ${e.company||''}<br/><small>${e.start_date||''} - ${e.end_date||'Present'}</small><ul style="margin-top:8px;">${bullets}</ul>`;
         workContainer.appendChild(div);
       });
     } else {
@@ -59,8 +117,7 @@
   }
 
   if (eduContainer) {
-    const { data: edus, error } = await Common.listEducation(user.id);
-    if (error) console.log('edu load err', error);
+    const edus = await safeListEducation(user.id);
     eduContainer.innerHTML = '';
     if (edus && edus.length) {
       edus.forEach(d => {
@@ -75,43 +132,72 @@
     }
   }
 
-  // Save profile button(s) — tries multiple ids your pages may use
+  // --- save profile (supports multiple button ids/selectors) ---
   const saveBtns = Array.from(document.querySelectorAll('#btn-save-profile, #save-profile, [data-save-profile]'));
   saveBtns.forEach(b => b.addEventListener('click', async (ev) => {
     ev.preventDefault();
     const payload = {
       id: user.id,
-      full_name: fullNameEl ? fullNameEl.value || null : null,
-      email: emailEl ? emailEl.value || null : null,
-      phone: phoneEl ? phoneEl.value || null : null,
-      location: locationEl ? locationEl.value || null : null,
-      linkedin: linkedinEl ? linkedinEl.value || null : null
+      full_name: fullNameEl ? (fullNameEl.value||null) : null,
+      email: emailEl ? (emailEl.value||null) : null,
+      phone: phoneEl ? (phoneEl.value||null) : null,
+      location: locationEl ? (locationEl.value||null) : null,
+      linkedin: linkedinEl ? (linkedinEl.value||null) : null
     };
-    const { error } = await Common.upsertProfile(payload);
-    if (error) return alert('Save error: ' + error.message);
-    alert('Profile saved');
-    // reload small lists if present (optional)
-  });
+    if (typeof Common.upsertProfile === 'function') {
+      try {
+        const r = await Common.upsertProfile(payload);
+        if (r && r.error) return alert('Save error: ' + r.error.message);
+        alert('Profile saved');
+      } catch(err){
+        alert('Save failed: ' + (err && err.message || err));
+      }
+    } else if (typeof Common.saveProfile === 'function') {
+      try {
+        const r = await Common.saveProfile(payload);
+        alert('Profile saved');
+      } catch(err){
+        alert('Save failed: ' + (err && err.message || err));
+      }
+    } else {
+      alert('Save not implemented in Common.js (no upsertProfile/saveProfile).');
+      console.warn('Missing Common.upsertProfile/saveProfile', payload);
+    }
+  }));
 
-  // Add experience handler (if btn exists)
-  const addExpBtn = document.getElementById('btn-add-exp') || document.getElementById('btn-add-exp') || document.getElementById('btn-add-work') || document.getElementById('add-work');
+  // --- Add experience handler (if btn exists) ---
+  const addExpBtn = document.getElementById('btn-add-exp') || document.getElementById('btn-add-work') || document.getElementById('add-work');
   if (addExpBtn) {
     addExpBtn.addEventListener('click', async () => {
-      // try to collect fields (fallback: prompt)
       const company = prompt('Company name');
       if (!company) return;
       const title = prompt('Title/Role') || '';
       const start = prompt('Start date (YYYY-MM)') || null;
-      const end = prompt('End date (YYYY-MM or empty)') || null;
+      const end = prompt('End date (YYYY-MM or leave empty)') || null;
       const row = { user_id: user.id, company, title, start_date: start, end_date: end };
-      const { error } = await Common.insertExperiences([row]);
-      if (error) return alert('Add experience error: ' + error.message);
-      alert('Experience added — refresh view');
-      location.reload();
+
+      // try multiple Common API names
+      try {
+        if (typeof Common.insertExperiences === 'function') {
+          const r = await Common.insertExperiences([row]);
+          if (r && r.error) throw r.error;
+        } else if (typeof Common.addExperience === 'function') {
+          await Common.addExperience(row);
+        } else {
+          alert('Add-experience helper not found in Common.js. Use the prompts to add to DB manually or implement insertExperiences/addExperience.');
+          console.warn('Missing Common.insertExperiences / Common.addExperience', row);
+          return;
+        }
+        alert('Experience added — refresh to see it.');
+        location.reload();
+      } catch(err) {
+        alert('Add experience failed: ' + (err && err.message || err));
+        console.error('Add exp error', err);
+      }
     });
   }
 
-  // Add education handler
+  // --- Add education handler ---
   const addEduBtn = document.getElementById('btn-add-edu') || document.getElementById('btn-add-education') || document.getElementById('add-edu');
   if (addEduBtn) {
     addEduBtn.addEventListener('click', async () => {
@@ -121,19 +207,43 @@
       const start = prompt('Start date') || null;
       const end = prompt('End date') || null;
       const row = { user_id: user.id, institution, degree, start_date: start, end_date: end };
-      const { error } = await Common.replaceEducationForUser(user.id, [row]); // or insert
-      if (error) return alert('Add education error: ' + error.message);
-      alert('Education added — refresh view');
-      location.reload();
+
+      try {
+        if (typeof Common.insertEducation === 'function') {
+          const r = await Common.insertEducation([row]);
+          if (r && r.error) throw r.error;
+        } else if (typeof Common.replaceEducationForUser === 'function') {
+          const r = await Common.replaceEducationForUser(user.id, [row]);
+          if (r && r.error) throw r.error;
+        } else {
+          alert('Add-education helper not found in Common.js. Implement insertEducation or replaceEducationForUser.');
+          console.warn('Missing Common.insertEducation / replaceEducationForUser', row);
+          return;
+        }
+        alert('Education added — refresh to see it.');
+        location.reload();
+      } catch(err) {
+        alert('Add education failed: ' + (err && err.message || err));
+        console.error('Add edu error', err);
+      }
     });
   }
 
-  // Logout wiring if button exists anywhere
+  // --- Logout wiring if button exists anywhere ---
   const logoutBtns = Array.from(document.querySelectorAll('#btn-logout, #logout, [data-logout]'));
   logoutBtns.forEach(b => b.addEventListener('click', async () => {
-    await Common.signOut();
+    try {
+      if (typeof Common.signOut === 'function') await Common.signOut();
+      else if (typeof Common.authSignOut === 'function') await Common.authSignOut();
+      // fallback: try supabase signOut if available
+      if (window.supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
+        await supabase.auth.signOut();
+      }
+    } catch(err) {
+      console.warn('Logout error', err);
+    }
     window.location.href = 'login.html';
   }));
 
-})();
+})(); // IIFE
 </script>
